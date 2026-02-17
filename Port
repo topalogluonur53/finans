@@ -1,0 +1,23 @@
+╔══════════════════════════════════════════════╗
+║          FINANS - PORT BILGILERI             ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║  Port 8080 - Flutter Frontend (Web App)      ║
+║  Port 2223 - Django Backend   (API Server)   ║
+║  Port 3000 - Reverse Proxy    (Cloudflare)   ║
+║                                              ║
+╠══════════════════════════════════════════════╣
+║  YEREL ERISIM:                               ║
+║    http://localhost:8080      (Frontend)      ║
+║    http://localhost:2223/api  (Backend API)   ║
+║                                              ║
+║  PROXY MODU:                                 ║
+║    http://localhost:3000      (Tek giris)     ║
+║    Route:                                    ║
+║      /api/*  -> Backend:2223                 ║
+║      /*      -> Frontend:8080                ║
+║                                              ║
+║  PRODUCTION:                                 ║
+║    https://finans.onurtopaloglu.uk/api        ║
+║                                              ║
+╚══════════════════════════════════════════════╝
