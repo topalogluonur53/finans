@@ -14,6 +14,12 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _token;
   bool get isAuthenticated => _token != null;
   bool get isLoading => _isLoading;
+  
+  // User detail getters
+  String? get username => _user?.username;
+  String? get email => _user?.email;
+  String? get createdAt => 'Kullanıcı'; // TODO: Add created_at to User model if needed
+
 
   Future<void> login(String username, String password) async {
     _isLoading = true;

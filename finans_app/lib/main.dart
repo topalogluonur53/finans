@@ -14,6 +14,7 @@ import 'presentation/screens/portfolio/portfolio_screen.dart';
 import 'presentation/screens/finance/finance_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'presentation/screens/tools/tools_screen.dart';
+import 'presentation/screens/settings/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,7 +68,9 @@ class MyApp extends StatelessWidget {
               '/portfolio': (_) => const PortfolioScreen(),
               '/finance': (_) => const FinanceScreen(),
               '/tools': (_) => const ToolsScreen(),
+              '/settings': (_) => const SettingsScreen(),
             },
+
             debugShowCheckedModeBanner: false,
           );
         },

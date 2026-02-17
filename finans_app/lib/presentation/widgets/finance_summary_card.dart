@@ -31,7 +31,7 @@ class FinanceSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isPositive ? Colors.green : Colors.red).withOpacity(0.3),
+            color: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -56,7 +56,7 @@ class FinanceSummaryCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.greenAccent.withOpacity(0.2),
+                            color: Colors.greenAccent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Icon(Icons.arrow_upward, color: Colors.greenAccent, size: 16),
@@ -93,7 +93,7 @@ class FinanceSummaryCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.redAccent.withOpacity(0.2),
+                              color: Colors.redAccent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Icon(Icons.arrow_downward, color: Colors.redAccent, size: 16),
@@ -122,7 +122,7 @@ class FinanceSummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(

@@ -110,6 +110,57 @@ class DashboardView extends StatelessWidget {
                       totalExpense: finance.totalExpense,
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Piyasa Özeti', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      TextButton(
+                        onPressed: () => onNavigateToTab?.call(3),
+                        child: const Text('Piyasaya Git'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (market.prices.isNotEmpty)
+                    SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: market.prices.length,
+                        itemBuilder: (context, index) {
+                          final price = market.prices[index];
+                          final isPositive = price.changePercent >= 0;
+                          return Card(
+                            margin: const EdgeInsets.only(right: 12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(price.symbol, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const Spacer(),
+                                  Row(
+                                    children: [
+                                      Text(Formatters.formatMoney(price.price), style: const TextStyle(fontSize: 14)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${isPositive ? '+' : ''}${price.changePercent.toStringAsFixed(1)}%',
+                                        style: TextStyle(
+                                          color: isPositive ? Colors.green : Colors.red,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   
                   const SizedBox(height: 24),
                   const Text('Hızlı İşlemler', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

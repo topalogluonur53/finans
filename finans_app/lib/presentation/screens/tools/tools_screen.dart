@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:finans_app/presentation/screens/tools/notepad/notepad_screen.dart';
 import 'package:finans_app/presentation/screens/tools/loan_calculator_screen.dart';
 import 'package:finans_app/presentation/screens/tools/currency_converter_screen.dart';
+import 'package:finans_app/presentation/screens/tools/ipo_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
@@ -13,6 +14,18 @@ class ToolsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _ToolCard(
+            title: 'Halka Arz (IPO)',
+            icon: Icons.trending_up,
+            subtitle: 'Yaklaşan ve son halka arzlar',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const IPOScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
           _ToolCard(
             title: 'Not Defteri',
             icon: Icons.note_alt,

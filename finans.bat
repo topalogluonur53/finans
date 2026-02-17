@@ -7,7 +7,7 @@ cls
 
 echo.
 echo  ========================================================
-echo    FINANS APP - OTOMATIK BASLATMA
+echo    FINANS APP - ANA BASLATICI
 echo    Frontend: http://localhost:8080
 echo    Backend:  http://localhost:2223
 echo  ========================================================
@@ -42,7 +42,7 @@ start "" /min cmd /c "cd /d %~dp0finans_backend && python manage.py runserver 0.
 echo      [OK]
 
 :: 4. Flutter Web Build
-echo [4/6] Frontend derleniyor (30-90 saniye surebilir)...
+echo [4/6] Frontend derleniyor (Bu biraz zaman alabilir)...
 cd /d "%~dp0finans_app"
 call flutter build web --release
 
@@ -53,14 +53,15 @@ if errorlevel 1 (
 )
 echo      [OK] Build tamamlandi.
 
-:: 5. Web sunucusu baslat (dogru MIME tipleriyle)
+:: 5. Web sunucusu baslat
 echo [5/6] Web sunucusu baslatiliyor (Port: 8080)...
-start "" /min cmd /c "python %~dp0web_server.py 8080 %~dp0finans_app\build\web"
+cd /d "%~dp0"
+start "" /min cmd /c "python web_server.py 8080 %~dp0finans_app\build\web"
 echo      [OK]
 
 :: 6. Tarayiciyi ac
 echo [6/6] Tarayici aciliyor...
-timeout /t 2 >nul
+timeout /t 3 >nul
 start http://localhost:8080
 
 echo.

@@ -9,7 +9,7 @@ class ApiConstants {
           host == '127.0.0.1' || 
           host.startsWith('192.168.') || 
           host.startsWith('10.')) {
-        return 'http://$host:2223/api';
+        return '${Uri.base.origin}/api';
       }
       // Production web or non-local environment
       return 'https://finans.onurtopaloglu.uk/api'; 
