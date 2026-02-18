@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:finans_app/core/constants/api_constants.dart';
 import 'package:finans_app/data/models/asset.dart';
+import 'package:finans_app/data/providers/market_provider.dart';
 
 class PortfolioProvider extends ChangeNotifier {
   String? _token;
@@ -80,17 +81,45 @@ class PortfolioProvider extends ChangeNotifier {
   }
 
   // Calculation Helpers
-  double getTotalValue(Map<String, double> prices) {
+  double getTotalValue(MarketProvider market) {
     double total = 0;
     for (var asset in _assets) {
-      double price = prices[asset.symbol] ?? prices[asset.type] ?? 0.0;
-      // Fallback: use purchase price? No, current value.
-      // If price is 0 (mock), maybe use purchasePrice for demo?
-      if (price == 0) price = asset.purchasePrice; 
-      
-      total += asset.quantity * price;
+      total += getAssetCurrentValue(asset, market);
     }
     return total;
+  }
+
+  double getAssetCurrentValue(Asset asset, MarketProvider market) {
+    double price = getPriceForAsset(asset, market);
+    return asset.quantity * (price > 0 ? price : asset.purchasePrice);
+  }
+
+  double getPriceForAsset(Asset asset, MarketProvider market) {
+    // Parse the asset type
+    AssetType? assetType;
+    try {
+      assetType = AssetType.values.firstWhere((e) => e.toString().split('.').last == asset.type);
+    } catch (_) {}
+
+    final String marketSymbol = assetType?.symbol ?? asset.symbol ?? '';
+    final double multiplier = assetType?.unitMultiplier ?? 1.0;
+    final bool isUsdBased = assetType?.isUsdBased ?? false;
+
+    double price = market.getPrice(marketSymbol);
+    
+    if (price > 0) {
+      price *= multiplier;
+      if (isUsdBased) {
+        price *= market.usdTryRate;
+      }
+      return price;
+    }
+    
+    return 0.0;
+  }
+
+  double getTotalCost() {
+    return _assets.fold(0, (sum, asset) => sum + (asset.quantity * asset.purchasePrice));
   }
 
   Future<bool> deleteAsset(int id) async {

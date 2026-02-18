@@ -22,7 +22,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadMarketData();
   }
 
@@ -54,53 +54,55 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Piyasa'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadMarketData,
+    return Column(
+      children: [
+        // Page Title Moved to HomeScreen App Bar
+        Container(
+          color: AppTheme.surfaceDark,
+          child: TabBar(
+            controller: _tabController,
+            indicatorColor: AppTheme.primaryColor,
+            labelColor: AppTheme.primaryColor,
+            unselectedLabelColor: AppTheme.textDim,
+            isScrollable: true,
+            tabs: const [
+              Tab(icon: Icon(Icons.monetization_on_outlined), text: 'Emtia'),
+              Tab(icon: Icon(Icons.currency_bitcoin), text: 'Kripto'),
+              Tab(icon: Icon(Icons.business_center_outlined), text: 'Borsa'),
+              Tab(icon: Icon(Icons.payments_outlined), text: 'Döviz'),
+            ],
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.textDim,
-          tabs: const [
-            Tab(icon: Icon(Icons.currency_bitcoin), text: 'Kripto'),
-            Tab(icon: Icon(Icons.diamond), text: 'Emtia'),
-            Tab(icon: Icon(Icons.attach_money), text: 'Döviz'),
-          ],
         ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(_error!, textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadMarketData,
-                        child: const Text('Tekrar Dene'),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text(_error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadMarketData,
+                            child: const Text('Tekrar Dene'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildMarketList(_marketData['crypto'] ?? []),
-                    _buildMarketList(_marketData['commodity'] ?? []),
-                    _buildMarketList(_marketData['currency'] ?? []),
-                  ],
-                ),
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildMarketList(_marketData['commodity'] ?? []),
+                        _buildMarketList(_marketData['crypto'] ?? []),
+                        _buildMarketList(_marketData['stock'] ?? []),
+                        _buildMarketList(_marketData['currency'] ?? []),
+                      ],
+                    ),
+        ),
+      ],
     );
   }
 
@@ -189,7 +191,15 @@ class _MarketPriceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  Formatters.formatMoney(price.currentPrice),
+                  Formatters.formatMoney(
+                    price.currentPrice,
+                    currency: price.symbol == 'XAU/XAG' 
+                              ? 'NONE'
+                              : (price.category == 'stock' || 
+                                 price.symbol.contains('TRY') || 
+                                 ['GA', 'CEYREK', 'YARIM', 'TAM', 'CUMHURIYET'].contains(price.symbol)) 
+                                ? 'TRY' : 'USD'
+                  ),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -202,7 +212,7 @@ class _MarketPriceCard extends StatelessWidget {
                     Icon(changeIcon, size: 16, color: changeColor),
                     const SizedBox(width: 4),
                     Text(
-                      '${isPositive ? '+' : ''}${price.priceChangePercentage24h.toStringAsFixed(2)}%',
+                      Formatters.formatPercent(price.priceChangePercentage24h),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -229,15 +239,15 @@ class _MarketPriceCard extends StatelessWidget {
         color = Colors.orange;
         break;
       case 'commodity':
-        icon = Icons.diamond;
+        icon = Icons.monetization_on;
         color = Colors.amber;
         break;
       case 'currency':
-        icon = Icons.attach_money;
+        icon = Icons.payments;
         color = Colors.green;
         break;
       default:
-        icon = Icons.show_chart;
+        icon = Icons.business_center;
         color = AppTheme.primaryColor;
     }
 

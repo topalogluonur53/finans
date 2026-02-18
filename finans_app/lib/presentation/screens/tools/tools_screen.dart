@@ -9,9 +9,7 @@ class ToolsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Araçlar')),
-      body: ListView(
+    return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _ToolCard(
@@ -62,8 +60,7 @@ class ToolsScreen extends StatelessWidget {
             },
           ),
           // More tools
-        ],
-      ),
+      ],
     );
   }
 }

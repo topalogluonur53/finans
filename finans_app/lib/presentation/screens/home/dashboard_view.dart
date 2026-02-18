@@ -27,67 +27,27 @@ class DashboardView extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final finance = Provider.of<FinanceProvider>(context);
     
-    // Create map for calculation
-    Map<String, double> priceMap = {};
-    for (var m in market.prices) {
-      priceMap[m.symbol] = m.price;
-    }
+    double totalValue = portfolio.getTotalValue(market);
     
-    double totalValue = portfolio.getTotalValue(priceMap);
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Finans App'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              portfolio.fetchAssets();
-              // market.fetchPrices();
-            }, 
-            icon: const Icon(Icons.refresh)
-          ),
-          IconButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Bildirimler'),
-                  content: const Text('Henüz yeni bildiriminiz yok.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Tamam'),
-                    ),
-                  ],
-                ),
-              );
-            }, 
-            icon: const Icon(Icons.notifications)
-          ),
-          IconButton(onPressed: () {
-            auth.logout();
-          }, icon: const Icon(Icons.logout)),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-        children: [
-          // Ticker
-          if (market.prices.isNotEmpty)
-            TickerWidget(prices: market.prices),
-          
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await portfolio.fetchAssets();
-                // await market.fetchPrices(); // Market polls automatically
-              },
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                children: [
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: Column(
+          children: [
+            // Ticker
+            if (market.prices.isNotEmpty)
+              TickerWidget(prices: market.prices),
+            
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await portfolio.fetchAssets();
+                  // await market.fetchPrices(); // Market polls automatically
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  children: [
                   const Text('Toplam Varlık', style: TextStyle(color: AppTheme.textDim)),
                   Text(
                     Formatters.formatMoney(totalValue),
@@ -95,9 +55,12 @@ class DashboardView extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
-                  GestureDetector(
+                   GestureDetector(
                     onTap: () => onNavigateToTab?.call(1),
-                    child: PortfolioSummaryCard(totalValue: totalValue),
+                    child: PortfolioSummaryCard(
+                      totalValue: totalValue,
+                      profitLoss: totalValue - portfolio.getTotalCost(),
+                    ),
                   ),
                   
                   const SizedBox(height: 16),
@@ -209,7 +172,8 @@ class DashboardView extends StatelessWidget {
                   if (portfolio.assets.isNotEmpty)
                     PortfolioPieChart(
                       assets: portfolio.assets,
-                      priceMap: priceMap,
+                      marketProvider: market,
+                      portfolioProvider: portfolio,
                     ),
                     
                   const SizedBox(height: 24),
@@ -236,12 +200,11 @@ class DashboardView extends StatelessWidget {
               ),
             ),
           ),
-            ],
-          ),
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _ActionButton extends StatefulWidget {

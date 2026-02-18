@@ -3,14 +3,19 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/data/models/asset.dart';
 
+import 'package:finans_app/data/providers/market_provider.dart';
+import 'package:finans_app/data/providers/portfolio_provider.dart';
+
 class PortfolioPieChart extends StatefulWidget {
   final List<Asset> assets;
-  final Map<String, double> priceMap;
+  final MarketProvider marketProvider;
+  final PortfolioProvider portfolioProvider;
 
   const PortfolioPieChart({
     super.key,
     required this.assets,
-    required this.priceMap,
+    required this.marketProvider,
+    required this.portfolioProvider,
   });
 
   @override
@@ -45,12 +50,7 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
     double totalValue = 0;
     
     for (var asset in widget.assets) {
-      double price = widget.priceMap[asset.symbol] ?? 
-                     widget.priceMap[asset.type] ?? 
-                     asset.purchasePrice;
-      if (price == 0) price = asset.purchasePrice;
-      
-      final value = asset.quantity * price;
+      final value = widget.portfolioProvider.getAssetCurrentValue(asset, widget.marketProvider);
       typeValues[asset.name] = (typeValues[asset.name] ?? 0) + value;
       totalValue += value;
     }

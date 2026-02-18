@@ -13,7 +13,29 @@ class AssetListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final market = Provider.of<MarketProvider>(context);
-    final double currentPrice = market.getPrice(asset.symbol ?? '');
+    
+    // Parse the asset type enum from string
+    AssetType? assetType;
+    try {
+      assetType = AssetType.values.firstWhere((e) => e.toString().split('.').last == asset.type);
+    } catch (_) {}
+
+    // Get market symbol and multiplier
+    final String marketSymbol = assetType?.symbol ?? asset.symbol ?? '';
+    final double multiplier = assetType?.unitMultiplier ?? 1.0;
+    final bool isUsdBased = assetType?.isUsdBased ?? false;
+
+    double currentPrice = market.getPrice(marketSymbol);
+    
+    // Apply unit multiplier (e.g., PAXG ounce to gram)
+    if (currentPrice > 0) {
+      currentPrice *= multiplier;
+      
+      // Convert to TRY if the asset is priced in USD (Crypto/Commodities)
+      if (isUsdBased) {
+        currentPrice *= market.usdTryRate;
+      }
+    }
     
     // If no market price, use purchase price or unknown (0)
     final double displayPrice = currentPrice > 0 ? currentPrice : asset.purchasePrice;
@@ -88,20 +110,35 @@ class AssetListItem extends StatelessWidget {
                       Formatters.formatMoney(totalValue),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
+                    const SizedBox(height: 2),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          profitLoss >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                          size: 12,
-                          color: profitLoss >= 0 ? AppTheme.secondaryColor : AppTheme.errorColor,
-                        ),
-                        const SizedBox(width: 4),
                         Text(
-                          Formatters.formatPercent(profitLossPercent),
+                          Formatters.formatMoney(profitLoss),
                           style: TextStyle(
-                            color: profitLoss >= 0 ? AppTheme.secondaryColor : AppTheme.errorColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                            color: profitLoss >= 0 ? Colors.greenAccent : Colors.redAccent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (profitLoss >= 0 ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: (profitLoss >= 0 ? Colors.green : Colors.red).withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            Formatters.formatPercent(profitLossPercent),
+                            style: TextStyle(
+                              color: profitLoss >= 0 ? Colors.greenAccent : Colors.redAccent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -127,15 +164,18 @@ class _AssetIcon extends StatelessWidget {
     IconData iconData = Icons.attach_money;
     Color color = Colors.blue;
 
-    if (type.contains('GOLD')) {
-      iconData = Icons.workspaces_filled; // Gold-ish
+    if (type.contains('GOLD') || type.contains('COMMODITY')) {
+      iconData = Icons.monetization_on;
       color = Colors.amber;
     } else if (type.contains('CRYPTO')) {
       iconData = Icons.currency_bitcoin;
       color = Colors.orange;
-    } else if (type.contains('USD')) {
-      iconData = Icons.attach_money;
+    } else if (type.contains('USD') || type.contains('CURRENCY')) {
+      iconData = Icons.payments;
       color = Colors.green;
+    } else if (type.contains('STOCK')) {
+      iconData = Icons.business_center;
+      color = Colors.blue;
     }
 
     return Container(

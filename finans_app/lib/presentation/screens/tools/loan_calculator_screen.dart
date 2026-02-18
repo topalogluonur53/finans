@@ -12,7 +12,7 @@ class LoanCalculatorScreen extends StatefulWidget {
 
 class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
   final _amountController = TextEditingController(text: '100000');
-  final _rateController = TextEditingController(text: '3.5');
+  final _rateController = TextEditingController(text: '3,5');
   final _termController = TextEditingController(text: '12');
 
   double _monthlyPayment = 0;
@@ -36,8 +36,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
   }
 
   void _calculate() {
-    final principal = double.tryParse(_amountController.text) ?? 0;
-    final annualRate = double.tryParse(_rateController.text) ?? 0;
+    final principal = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
+    final annualRate = double.tryParse(_rateController.text.replaceAll(',', '.')) ?? 0;
     final months = int.tryParse(_termController.text) ?? 1;
 
     if (principal <= 0 || annualRate <= 0 || months <= 0) {

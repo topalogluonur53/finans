@@ -14,14 +14,6 @@ class NotepadScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Not Defteri'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search
-            },
-          ),
-        ],
       ),
       body: Consumer<NoteProvider>(
         builder: (context, noteProvider, child) {

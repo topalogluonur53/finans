@@ -40,47 +40,40 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Finans Modülü'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Gelirler'),
-            Tab(text: 'Giderler'),
-          ],
-        ),
-      ),
-      body: Consumer<FinanceProvider>(
-        builder: (context, finance, child) {
-          if (finance.isLoading && (finance.incomes.isEmpty && finance.expenses.isEmpty)) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return TabBarView(
+    return Column(
+      children: [
+        // Page Title Moved to HomeScreen App Bar
+        Container(
+          color: AppTheme.surfaceDark,
+          child: TabBar(
             controller: _tabController,
-            children: [
-              _buildIncomeList(finance),
-              _buildExpenseList(finance),
+            indicatorColor: AppTheme.primaryColor,
+            labelColor: AppTheme.primaryColor,
+            unselectedLabelColor: AppTheme.textDim,
+            tabs: const [
+              Tab(text: 'Gelirler'),
+              Tab(text: 'Giderler'),
             ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final isIncome = _tabController.index == 0;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddTransactionScreen(
-                type: isIncome ? TransactionType.income : TransactionType.expense,
-              ),
-            ),
-          );
-        },
-        backgroundColor: _tabController.index == 0 ? Colors.green : Colors.red,
-        child: const Icon(Icons.add),
-      ),
+          ),
+        ),
+        Expanded(
+          child: Consumer<FinanceProvider>(
+            builder: (context, finance, child) {
+              if (finance.isLoading && (finance.incomes.isEmpty && finance.expenses.isEmpty)) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildIncomeList(finance),
+                  _buildExpenseList(finance),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

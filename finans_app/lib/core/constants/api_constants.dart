@@ -5,15 +5,17 @@ class ApiConstants {
     if (kIsWeb) {
       final String host = Uri.base.host;
       print('Detected host: $host'); // Debugging
-      if (host == 'localhost' || 
-          host == '127.0.0.1' || 
-          host.startsWith('192.168.') || 
-          host.startsWith('10.')) {
-        return '${Uri.base.origin}/api';
+      final String origin = Uri.base.origin;
+      
+      if (host == 'localhost' || host == '127.0.0.1') {
+        // Local geliştirme: Doğrudan backend portuna bağlan
+        return 'http://$host:2223/api';
       }
-      // Production web or non-local environment
-      return 'https://finans.onurtopaloglu.uk/api'; 
+      
+      // Production: Sitenin kendi adresi üzerinden proxy kullan (SSL uyumlu)
+      return '$origin/api';
     }
+    // Mobil veya diğer fallback
     return 'https://finans.onurtopaloglu.uk/api';
   }
   
