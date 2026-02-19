@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-b5w$$iw(!8g#%t3h5hrp20h3245zo1o=8%7n0p=3o=dqh@-6s('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['finans.onurtopaloglu.uk', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://finans.onurtopaloglu.uk']
 
 
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'finance',
     'tools',
     'market',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -142,6 +143,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -161,4 +163,18 @@ CORS_ALLOW_ALL_ORIGINS = True
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+CELERY_BEAT_SCHEDULE = {
+    "update-market-data": {
+        "task": "market.tasks.update_market_data",
+        "schedule": 300.0  # 5 minutes
+    }
 }

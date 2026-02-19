@@ -121,7 +121,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
             onDismissed: (direction) {
               if (income.id != null) {
                 finance.deleteIncome(income.id!);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gelir silindi')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gelir silindi.')));
               }
             },
             child: ListTile(
@@ -210,7 +210,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
             onDismissed: (direction) {
               if (expense.id != null) {
                 finance.deleteExpense(expense.id!);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gider silindi')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gider silindi.')));
               }
             },
             child: ListTile(

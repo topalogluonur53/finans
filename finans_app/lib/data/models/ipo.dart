@@ -35,8 +35,14 @@ class IPO {
     );
   }
 
-  bool get isUpcoming => status?.toLowerCase() == 'upcoming' || 
-                         (date != null && DateTime.tryParse(date!)?.isAfter(DateTime.now()) == true);
+  bool get isUpcoming {
+    if (status?.toLowerCase() == 'upcoming') return true;
+    if (date != null) {
+      final dt = DateTime.tryParse(date!);
+      if (dt != null && dt.isAfter(DateTime.now())) return true;
+    }
+    return false;
+  }
   
   bool get isPriced => status?.toLowerCase() == 'priced' || price != null;
   

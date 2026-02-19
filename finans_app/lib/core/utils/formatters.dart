@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 
 class Formatters {
-  static final _currencyUSD = NumberFormat.currency(locale: 'en_US', symbol: '\$', decimalDigits: 2);
+  static final _currencyUSD = NumberFormat.currency(locale: 'tr_TR', symbol: '\$', decimalDigits: 2);
   static final _currencyTRY = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
 
   static final _numberFormat = NumberFormat.decimalPattern('tr_TR')..minimumFractionDigits = 2..maximumFractionDigits = 2;

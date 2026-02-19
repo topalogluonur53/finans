@@ -102,7 +102,7 @@ class DashboardView extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(price.symbol, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(price.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                   const Spacer(),
                                   Row(
                                     children: [

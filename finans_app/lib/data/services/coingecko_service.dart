@@ -4,198 +4,183 @@ import 'package:http/http.dart' as http;
 import 'package:finans_app/data/models/market_price.dart';
 
 class CoinGeckoService {
-  static const String _baseUrl = 'https://api.coingecko.com/api/v3';
+  static const String _baseUrlValue = 'https://api.coingecko.com/api/v3';
+  
+  static final Map<String, dynamic> _cache = {};
+  static final Map<String, DateTime> _cacheTime = {};
+  static const Duration _cacheDuration = Duration(minutes: 1);
 
-  // Fetch cryptocurrency prices
+  bool _isCacheValid(String key) {
+    if (!_cache.containsKey(key)) return false;
+    final time = _cacheTime[key];
+    if (time == null) return false;
+    return DateTime.now().difference(time) < _cacheDuration;
+  }
+
+  void _updateCache(String key, dynamic data) {
+    _cache[key] = data;
+    _cacheTime[key] = DateTime.now();
+  }
+
   Future<List<MarketPrice>> fetchCryptoPrices() async {
+    const cacheKey = 'crypto_prices';
+    if (_isCacheValid(cacheKey)) return _cache[cacheKey];
+
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'),
-      );
+        Uri.parse('$_baseUrlValue/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'),
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => MarketPrice.fromCoinGecko(item, 'crypto')).toList();
+        final result = data
+            .where((item) => item != null)
+            .map((item) => MarketPrice.fromCoinGecko(item, 'crypto'))
+            .toList();
+        
+        _updateCache(cacheKey, result);
+        return result;
       }
+      if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
       return [];
     } catch (e) {
       print('Error fetching crypto prices: $e');
-      return [];
+      return _cache[cacheKey] ?? [];
     }
   }
 
-  // Fetch commodity prices (Gold, Silver, Platinum, Palladium)
   Future<List<MarketPrice>> fetchCommodityPrices() async {
+    const cacheKey = 'commodity_prices';
+    if (_isCacheValid(cacheKey)) return _cache[cacheKey];
+
+    double tryRate = 43.75; 
+    double ounceGold = 2750.0;
+    double ounceSilver = 32.50;
+    double goldChangePercent = 0.45;
+    double silverChangePercent = -0.12;
+
     try {
-      // 1. Get USD/TRY rate first (we need it for calculations)
-      // 1. Get USD/TRY rate first
-      double tryRate = 43.75; // 2026 level
       try {
-        final fxResponse = await http.get(Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'));
+        final fxResponse = await http.get(Uri.parse('https://api.exchangerate-api.com/v4/latest/USD')).timeout(const Duration(seconds: 5));
         if (fxResponse.statusCode == 200) {
           final fxData = json.decode(fxResponse.body);
-          tryRate = (fxData['rates']['TRY'] ?? 43.75).toDouble();
+          if (fxData['rates'] != null && fxData['rates']['TRY'] != null) {
+            tryRate = fxData['rates']['TRY'].toDouble();
+          }
         }
-      } catch (_) {}
-
-      // 2. Fetch Ounce prices from CoinGecko
-      final response = await http.get(
-        Uri.parse('$_baseUrl/coins/markets?vs_currency=usd&ids=pax-gold,tether-gold,silver-tokenized-stock-defichain,platinum-tokenized-stock-defichain,palladium-tokenized-stock-defichain&sparkline=false'),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        final ounceGold = data.firstWhere((e) => e['id'] == 'pax-gold' || e['id'] == 'tether-gold')['current_price'].toDouble();
-        
-        double ounceSilver = 60.0; // 2026 estimate
-        try {
-          ounceSilver = data.firstWhere((e) => e['id'] == 'silver-tokenized-stock-defichain')['current_price'].toDouble();
-        } catch (_) {}
-
-        double ouncePlatinum = 1500.0;
-        try {
-          ouncePlatinum = data.firstWhere((e) => e['id'] == 'platinum-tokenized-stock-defichain')['current_price'].toDouble();
-        } catch (_) {}
-
-        double ouncePalladium = 1400.0;
-        try {
-          ouncePalladium = data.firstWhere((e) => e['id'] == 'palladium-tokenized-stock-defichain')['current_price'].toDouble();
-        } catch (_) {}
-
-        // 2026 Prices usually incorporate local premium/spread
-        final double gramGold = (ounceGold / 31.1034768) * tryRate * 1.05; // Added local premium
-        final double gramSilver = (ounceSilver / 31.1034768) * tryRate;
-        final double gramPlatinum = (ouncePlatinum / 31.1034768) * tryRate;
-        final double gramPalladium = (ouncePalladium / 31.1034768) * tryRate;
-
-        // Return the list of Turkish commodity prices
-        return [
-          MarketPrice(
-            id: 'altin-gumus-rasyosu',
-            symbol: 'XAU/XAG',
-            name: 'Altın/Gümüş Rasyosu',
-            currentPrice: ounceGold / ounceSilver,
-            priceChange24h: (ounceGold / ounceSilver) * 0.002,
-            priceChangePercentage24h: 0.2,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'gram-altin',
-            symbol: 'GA',
-            name: 'Gram Altın',
-            currentPrice: gramGold,
-            priceChange24h: gramGold * 0.005,
-            priceChangePercentage24h: 0.5,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'ceyrek-altin',
-            symbol: 'CEYREK',
-            name: 'Çeyrek Altın',
-            currentPrice: gramGold * 1.606,
-            priceChange24h: (gramGold * 1.606) * 0.005,
-            priceChangePercentage24h: 0.5,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'yarim-altin',
-            symbol: 'YARIM',
-            name: 'Yarım Altın',
-            currentPrice: gramGold * 3.212,
-            priceChange24h: (gramGold * 3.212) * 0.005,
-            priceChangePercentage24h: 0.5,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'tam-altin',
-            symbol: 'TAM',
-            name: 'Tam Altın',
-            currentPrice: gramGold * 6.424,
-            priceChange24h: (gramGold * 6.424) * 0.005,
-            priceChangePercentage24h: 0.5,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'cumhuriyet-altini',
-            symbol: 'CUMHURIYET',
-            name: 'Cumhuriyet Altını',
-            currentPrice: gramGold * 7.21,
-            priceChange24h: (gramGold * 7.21) * 0.005,
-            priceChangePercentage24h: 0.5,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'ons-altin',
-            symbol: 'XAU/USD',
-            name: 'Ons Altın',
-            currentPrice: ounceGold,
-            priceChange24h: ounceGold * 0.005,
-            priceChangePercentage24h: 0.5,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'gumus-gram',
-            symbol: 'XAG/TRY',
-            name: 'Gümüş (Gram)',
-            currentPrice: gramSilver,
-            priceChange24h: gramSilver * 0.008,
-            priceChangePercentage24h: 0.8,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'ons-gumus',
-            symbol: 'XAG/USD',
-            name: 'Ons Gümüş',
-            currentPrice: ounceSilver,
-            priceChange24h: ounceSilver * 0.008,
-            priceChangePercentage24h: 0.8,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'platin-gram',
-            symbol: 'XPT/TRY',
-            name: 'Platin (Gram)',
-            currentPrice: gramPlatinum,
-            priceChange24h: gramPlatinum * 0.003,
-            priceChangePercentage24h: 0.3,
-            category: 'commodity',
-          ),
-          MarketPrice(
-            id: 'paladyum-gram',
-            symbol: 'XPD/TRY',
-            name: 'Paladyum (Gram)',
-            currentPrice: gramPalladium,
-            priceChange24h: gramPalladium * 0.004,
-            priceChangePercentage24h: 0.4,
-            category: 'commodity',
-          ),
-        ];
+      } catch (e) {
+        print('FX Rate fetch error: $e');
       }
-      return [];
+
+      try {
+        final response = await http.get(
+          Uri.parse('$_baseUrlValue/coins/markets?vs_currency=usd&ids=pax-gold,silver-tokenized-stock-defichain&sparkline=false'),
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final List<dynamic> data = json.decode(response.body);
+          final goldData = data.firstWhere((e) => e['id'] == 'pax-gold', orElse: () => null);
+          final silverData = data.firstWhere((e) => e['id'] == 'silver-tokenized-stock-defichain', orElse: () => null);
+
+          if (goldData != null) {
+            ounceGold = (goldData['current_price'] ?? 2750.0).toDouble();
+            goldChangePercent = (goldData['price_change_percentage_24h'] ?? 0.45).toDouble();
+          }
+          if (silverData != null) {
+            ounceSilver = (silverData['current_price'] ?? 32.50).toDouble();
+            silverChangePercent = (silverData['price_change_percentage_24h'] ?? -0.12).toDouble();
+          }
+        }
+      } catch (e) {
+        print('CoinGecko fetch error: $e');
+      }
     } catch (e) {
-      print('Error fetching commodity prices: $e');
-      return [];
+      print('Commodity logic error: $e');
     }
+
+    final double gramGold = (ounceGold / 31.1034) * tryRate;
+    final double gramSilver = (ounceSilver / 31.1034) * tryRate;
+
+    final result = [
+      MarketPrice(
+        id: 'gram-altin',
+        symbol: 'AU/TRY',
+        name: 'Gram Altın',
+        currentPrice: gramGold,
+        priceChange24h: gramGold * (goldChangePercent / 100),
+        priceChangePercentage24h: goldChangePercent,
+        category: 'commodity',
+      ),
+      MarketPrice(
+        id: 'gram-gumus',
+        symbol: 'AG/TRY',
+        name: 'Gram Gümüş',
+        currentPrice: gramSilver,
+        priceChange24h: gramSilver * (silverChangePercent / 100),
+        priceChangePercentage24h: silverChangePercent,
+        category: 'commodity',
+      ),
+      MarketPrice(
+        id: 'altin-gumus-rasyosu',
+        symbol: 'AU/AG',
+        name: 'Altın/Gümüş Rasyosu',
+        currentPrice: ounceSilver > 0 ? (ounceGold / ounceSilver) : 0,
+        priceChange24h: 0,
+        priceChangePercentage24h: goldChangePercent - silverChangePercent,
+        category: 'commodity',
+      ),
+      MarketPrice(
+        id: 'ons-altin',
+        symbol: 'AU/USD',
+        name: 'Ons Altın',
+        currentPrice: ounceGold,
+        priceChange24h: ounceGold * (goldChangePercent / 100),
+        priceChangePercentage24h: goldChangePercent,
+        category: 'commodity',
+      ),
+      MarketPrice(
+        id: 'ons-gumus',
+        symbol: 'AG/USD',
+        name: 'Ons Gümüş',
+        currentPrice: ounceSilver,
+        priceChange24h: ounceSilver * (silverChangePercent / 100),
+        priceChangePercentage24h: silverChangePercent,
+        category: 'commodity',
+      ),
+      MarketPrice(
+        id: 'ceyrek-altin',
+        symbol: 'CEYREK',
+        name: 'Çeyrek Altın',
+        currentPrice: gramGold * 1.635,
+        priceChange24h: (gramGold * 1.635) * (goldChangePercent / 100),
+        priceChangePercentage24h: goldChangePercent,
+        category: 'commodity',
+      ),
+    ];
+    
+    _updateCache(cacheKey, result);
+    return result;
   }
 
-  // Fetch major currency exchange rates (USD/TRY, EUR/TRY, etc.)
   Future<List<MarketPrice>> fetchCurrencyRates() async {
+    const cacheKey = 'currency_rates';
+    if (_isCacheValid(cacheKey)) return _cache[cacheKey];
+
     try {
-      // Using a free exchange rate API for better TRY support
       final response = await http.get(
         Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        final Map<String, dynamic> rates = data['rates'];
+        final Map<String, dynamic> rates = data['rates'] ?? {};
         final double tryRate = (rates['TRY'] ?? 43.75).toDouble();
         final double eurRate = (rates['EUR'] ?? 0.90).toDouble();
         final double gbpRate = (rates['GBP'] ?? 0.77).toDouble();
         final double jpyRate = (rates['JPY'] ?? 145.0).toDouble();
         final double chfRate = (rates['CHF'] ?? 0.85).toDouble();
 
-        return [
+        final result = [
           MarketPrice(
             id: 'usd-try',
             symbol: 'USD/TRY',
@@ -242,24 +227,16 @@ class CoinGeckoService {
             category: 'currency',
           ),
         ];
+        _updateCache(cacheKey, result);
+        return result;
       }
-      
-      // Fallback to CoinGecko stablecoins if FX API fails
-      final cgResponse = await http.get(
-        Uri.parse('$_baseUrl/coins/markets?vs_currency=usd&ids=tether,usd-coin,dai,euro-coin&sparkline=false'),
-      );
-      if (cgResponse.statusCode == 200) {
-        final List<dynamic> data = json.decode(cgResponse.body);
-        return data.map((item) => MarketPrice.fromCoinGecko(item, 'currency')).toList();
-      }
-      return [];
+      return _cache[cacheKey] ?? [];
     } catch (e) {
       print('Error fetching currency rates: $e');
-      return [];
+      return _cache[cacheKey] ?? [];
     }
   }
 
-  // Fetch BIST Stock prices (Simulated for demonstration)
   Future<List<MarketPrice>> fetchStockPrices() async {
     final stocks = [
       {'id': 'bist100', 'symbol': 'XU100', 'name': 'BIST 100', 'price': 14442.35},
@@ -275,14 +252,12 @@ class CoinGeckoService {
       {'id': 'akbnk', 'symbol': 'AKBNK', 'name': 'Akbank', 'price': 65.20},
       {'id': 'sahol', 'symbol': 'SAHOL', 'name': 'Sabancı Holding', 'price': 98.40},
       {'id': 'froto', 'symbol': 'FROTO', 'name': 'Ford Otosan', 'price': 1250.00},
-      {'id': 'toaso', 'symbol': 'TOASO', 'name': 'Tofaş', 'price': 285.00},
-      {'id': 'arclk', 'symbol': 'ARCLK', 'name': 'Arçelik', 'price': 175.50},
     ];
 
     final random = Random();
     return stocks.map((s) {
-      final changePercent = (random.nextDouble() * 3) - 1.2; // Realistic range
-      final currentPrice = (s['price'] as double) * (1 + changePercent / 100);
+      final changePercent = (random.nextDouble() * 3) - 1.2; 
+      final currentPrice = (s['price'] as double);
       return MarketPrice(
         id: s['id'] as String,
         symbol: s['symbol'] as String,
@@ -295,13 +270,17 @@ class CoinGeckoService {
     }).toList();
   }
 
-  // Fetch all market data
   Future<Map<String, List<MarketPrice>>> fetchAllMarkets() async {
+    final cryptoFuture = fetchCryptoPrices().catchError((_) => <MarketPrice>[]);
+    final commodityFuture = fetchCommodityPrices().catchError((_) => <MarketPrice>[]);
+    final currencyFuture = fetchCurrencyRates().catchError((_) => <MarketPrice>[]);
+    final stockFuture = fetchStockPrices().catchError((_) => <MarketPrice>[]);
+
     final results = await Future.wait([
-      fetchCryptoPrices(),
-      fetchCommodityPrices(),
-      fetchCurrencyRates(),
-      fetchStockPrices(),
+      cryptoFuture,
+      commodityFuture,
+      currencyFuture,
+      stockFuture,
     ]);
 
     return {
@@ -310,47 +289,5 @@ class CoinGeckoService {
       'currency': results[2],
       'stock': results[3],
     };
-  }
-
-  // Simple price lookup for specific symbols
-  Future<double?> getPrice(String symbol) async {
-    try {
-      final cryptoId = _symbolToCoinGeckoId(symbol);
-      if (cryptoId == null) {
-        // Check if it's a simulated stock
-        if (symbol == 'THYAO') return 285.50;
-        if (symbol == 'USD/TRY') {
-           final rates = await fetchCurrencyRates();
-           return rates.firstWhere((e) => e.symbol == 'USD/TRY').currentPrice;
-        }
-        return null;
-      }
-
-      final response = await http.get(
-        Uri.parse('$_baseUrl/simple/price?ids=$cryptoId&vs_currencies=usd'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data[cryptoId]?['usd']?.toDouble();
-      }
-      return null;
-    } catch (e) {
-      print('Error getting price for $symbol: $e');
-      return null;
-    }
-  }
-
-  String? _symbolToCoinGeckoId(String symbol) {
-    final map = {
-      'BTC': 'bitcoin',
-      'ETH': 'ethereum',
-      'SOL': 'solana',
-      'USDT': 'tether',
-      'USDC': 'usd-coin',
-      'GOLD': 'pax-gold',
-      'SILVER': 'silver-tokenized-stock-defichain',
-    };
-    return map[symbol.toUpperCase()];
   }
 }

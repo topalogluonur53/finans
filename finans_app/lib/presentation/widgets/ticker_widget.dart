@@ -36,12 +36,16 @@ class TickerWidget extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    data.symbol,
+                    data.name,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    Formatters.formatMoney(data.price),
+                    Formatters.formatMoney(
+                      data.price,
+                      currency: data.symbol == 'AU/AG' ? 'NONE' : 
+                               (data.symbol.contains('USD') || data.category == 'crypto') ? 'USD' : 'TRY'
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(width: 4),

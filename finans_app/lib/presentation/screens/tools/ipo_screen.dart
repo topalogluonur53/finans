@@ -92,7 +92,7 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
             ),
             Tab(
               icon: const Icon(Icons.history),
-              text: 'Son 30 Gün (${_recentIPOs.length})',
+              text: 'Son Arzlar (${_recentIPOs.length})',
             ),
             Tab(
               icon: const Icon(Icons.newspaper),
@@ -430,7 +430,13 @@ class _IPOCard extends StatelessWidget {
               ],
               if (ipo.price != null) ...[
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.price_check, 'Fiyat', '\$${ipo.price!.toStringAsFixed(2)}'),
+                _buildDetailRow(
+                  Icons.price_check, 
+                  'Fiyat', 
+                  ipo.exchange == 'BIST' 
+                      ? '${ipo.price!.toStringAsFixed(2)} TL' 
+                      : '\$${ipo.price!.toStringAsFixed(2)}'
+                ),
               ],
               if (ipo.numberOfShares != null) ...[
                 const SizedBox(height: 8),
@@ -506,7 +512,13 @@ class _IPOCard extends StatelessWidget {
             if (ipo.priceRange != null)
               _buildDetailRow(Icons.attach_money, 'Fiyat Aralığı', ipo.priceRange!),
             if (ipo.price != null)
-              _buildDetailRow(Icons.price_check, 'Kesin Fiyat', '\$${ipo.price!.toStringAsFixed(2)}'),
+              _buildDetailRow(
+                Icons.price_check, 
+                'Kesin Fiyat', 
+                ipo.exchange == 'BIST' 
+                    ? '${ipo.price!.toStringAsFixed(2)} TL' 
+                    : '\$${ipo.price!.toStringAsFixed(2)}'
+              ),
             if (ipo.numberOfShares != null) ...[
               const SizedBox(height: 12),
               _buildDetailRow(

@@ -99,7 +99,7 @@ class PortfolioScreen extends StatelessWidget {
                 onDismissed: (direction) {
                   if (asset.id != null) {
                     provider.deleteAsset(asset.id!);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Varlık silindi')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Varlık silindi.')));
                   }
                 },
                 child: AssetListItem(asset: asset),

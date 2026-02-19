@@ -154,6 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   _buildDrawerTile(
+                    icon: Icons.candlestick_chart,
+                    title: 'Piyasa Verileri',
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() => _currentIndex = 3);
+                    },
+                  ),
+                  _buildDrawerTile(
                     icon: Icons.settings_outlined,
                     title: 'Ayarlar',
                     onTap: () {

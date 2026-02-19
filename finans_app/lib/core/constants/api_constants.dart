@@ -32,6 +32,7 @@ class ApiConstants {
   static const String toolsEndpoint = '/tools/';
   static const String notesEndpoint = '/tools/notes/';
   static const String marketEndpoint = '/market/';
-  static const String pricesEndpoint = '/market/prices/';
+  static const String categorizedMarketEndpoint = '/market/categorized/';
   static const String tickerEndpoint = '/market/ticker/';
+  static const String alarmsEndpoint = '/market/alarms/';
 }

@@ -1,0 +1,177 @@
+{% load market_extras %}
+<!-- Masaüstü Görünümü (Gelişmiş Tablo) -->
+<div class="table-responsive-custom">
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small text-uppercase">
+                <tr>
+                    <th class="ps-4 py-3">Enstrüman</th>
+                    <th class="py-3">Fiyat</th>
+                    <th class="py-3">Günlük Değişim</th>
+                    <th class="py-3">Günün Aralığı (D/Y)</th>
+                    <th class="py-3 text-end pe-4">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="symbol-circle me-3">
+                                {{ item.name|slice:":1" }}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">{{ item.name }}</div>
+                                <div class="text-muted small">{{ item.symbol }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold fs-5 text-dark">{{ item.price }}</div>
+                        {% if item.volume %}
+                        <div class="text-muted x-small">Hacim: {{ item.volume|format_volume }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span
+                                class="{% if item.change_percent_24h >= 0 %}price-up{% else %}price-down{% endif %} fs-6">
+                                {{ item.change_percent_24h }}%
+                                <i
+                                    class="fas fa-caret-{% if item.change_percent_24h >= 0 %}up{% else %}down{% endif %} ms-1"></i>
+                            </span>
+                            <span class="text-muted x-small">
+                                {% if item.price_change_24h >= 0 %}+{% endif %}{{ item.price_change_24h }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if item.day_low and item.day_high %}
+                        <div class="progress-container w-100" style="max-width: 150px;">
+                            <div class="d-flex justify-content-between x-small text-muted mb-1">
+                                <span>{{ item.day_low }}</span>
+                                <span>{{ item.day_high }}</span>
+                            </div>
+                            {% get_price_percentage item.price item.day_low item.day_high as price_pos %}
+                            <div class="progress" style="height: 4px; background-color: #e2e8f0;">
+                                <div class="progress-bar bg-accent" role="progressbar" style="width: {{ price_pos }}%">
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-action-pill" onclick="setAlarmSymbol('{{ item.symbol }}')"
+                            data-bs-toggle="modal" data-bs-target="#alarmModal">
+                            <i class="far fa-bell me-1"></i> Alarm
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-satellite-dish fa-3x mb-3 opacity-25"></i>
+                            <p>Veri senkronizasyonu bekleniyor...</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Mobil Görünüm (Zengin Kartlar) -->
+<div class="mobile-cards px-2">
+    {% for item in items %}
+    <div
+        class="market-card p-3 border-start border-4 {% if item.change_percent_24h >= 0 %}border-success{% else %}border-danger{% endif %} shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <span
+                    class="badge {% if item.change_percent_24h >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill mb-1">
+                    {{ item.change_percent_24h }}%
+                </span>
+                <div class="fw-bold fs-5 text-dark">{{ item.name }}</div>
+                <div class="text-muted small">{{ item.symbol }}</div>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold fs-4 text-dark">{{ item.price }}</div>
+                <div class="text-muted x-small">Dün: {{ item.open_price|default:"-" }}</div>
+            </div>
+        </div>
+
+        {% if item.day_low %}
+        <div class="bg-light p-2 rounded-3 mb-3">
+            <div class="row text-center g-0">
+                <div class="col-6 border-end">
+                    <div class="text-muted x-small">En Düşük</div>
+                    <div class="fw-medium small">{{ item.day_low }}</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted x-small">En Yüksek</div>
+                    <div class="fw-medium small">{{ item.day_high }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-grid">
+            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="setAlarmSymbol('{{ item.symbol }}')"
+                data-bs-toggle="modal" data-bs-target="#alarmModal">
+                <i class="far fa-bell me-1"></i> Fiyat Alarmı Kur
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .x-small {
+        font-size: 0.7rem;
+    }
+
+    .symbol-circle {
+        width: 36px;
+        height: 36px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #6366f1;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-action-pill {
+        border-radius: 20px;
+        font-size: 0.85rem;
+        padding: 6px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        transition: all 0.2s;
+    }
+
+    .btn-action-pill:hover {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+    }
+
+    .bg-success-subtle {
+        background-color: #d1fae5;
+    }
+
+    .bg-danger-subtle {
+        background-color: #fee2e2;
+    }
+
+    .progress-bar.bg-accent {
+        background-color: #6366f1;
+    }
+</style>

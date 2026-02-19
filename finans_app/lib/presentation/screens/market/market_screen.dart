@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
-import 'package:finans_app/data/models/market_price.dart';
-import 'package:finans_app/data/services/coingecko_service.dart';
+import 'package:finans_app/data/providers/market_provider.dart';
 import 'package:finans_app/core/utils/formatters.dart';
+import 'package:finans_app/presentation/screens/market/market_detail_screen.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -12,18 +13,12 @@ class MarketScreen extends StatefulWidget {
 }
 
 class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderStateMixin {
-  final CoinGeckoService _service = CoinGeckoService();
   late TabController _tabController;
   
-  Map<String, List<MarketPrice>> _marketData = {};
-  bool _isLoading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _loadMarketData();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -32,31 +27,17 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  Future<void> _loadMarketData() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final data = await _service.fetchAllMarkets();
-      setState(() {
-        _marketData = data;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Veriler yüklenirken hata oluştu: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final marketProvider = Provider.of<MarketProvider>(context);
+    final marketData = {
+      'commodity': marketProvider.prices.where((p) => p.category == 'commodity' && p.parentSymbol == null).toList(),
+      'stock': marketProvider.prices.where((p) => (p.category == 'stock' || p.category == 'index') && p.parentSymbol == null).toList(),
+      'currency': marketProvider.prices.where((p) => p.category == 'currency' && p.parentSymbol == null).toList(),
+    };
+
     return Column(
       children: [
-        // Page Title Moved to HomeScreen App Bar
         Container(
           color: AppTheme.surfaceDark,
           child: TabBar(
@@ -64,77 +45,72 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
             indicatorColor: AppTheme.primaryColor,
             labelColor: AppTheme.primaryColor,
             unselectedLabelColor: AppTheme.textDim,
-            isScrollable: true,
             tabs: const [
               Tab(icon: Icon(Icons.monetization_on_outlined), text: 'Emtia'),
-              Tab(icon: Icon(Icons.currency_bitcoin), text: 'Kripto'),
               Tab(icon: Icon(Icons.business_center_outlined), text: 'Borsa'),
               Tab(icon: Icon(Icons.payments_outlined), text: 'Döviz'),
             ],
           ),
         ),
         Expanded(
-          child: _isLoading
+          child: marketProvider.isLoading && marketProvider.prices.isEmpty
               ? const Center(child: CircularProgressIndicator())
-              : _error != null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                          const SizedBox(height: 16),
-                          Text(_error!, textAlign: TextAlign.center),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadMarketData,
-                            child: const Text('Tekrar Dene'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildMarketList(_marketData['commodity'] ?? []),
-                        _buildMarketList(_marketData['crypto'] ?? []),
-                        _buildMarketList(_marketData['stock'] ?? []),
-                        _buildMarketList(_marketData['currency'] ?? []),
-                      ],
-                    ),
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildMarketList(context, marketData['commodity'] ?? [], marketProvider),
+                    _buildMarketList(context, marketData['stock'] ?? [], marketProvider),
+                    _buildMarketList(context, marketData['currency'] ?? [], marketProvider),
+                  ],
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildMarketList(List<MarketPrice> prices) {
+  Widget _buildMarketList(BuildContext context, List<MarketData> prices, MarketProvider provider) {
     if (prices.isEmpty) {
       return const Center(
         child: Text('Veri bulunamadı', style: TextStyle(color: AppTheme.textDim)),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadMarketData,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: prices.length,
-        itemBuilder: (context, index) {
-          final price = prices[index];
-          return _MarketPriceCard(price: price);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: prices.length,
+      itemBuilder: (context, index) {
+        final price = prices[index];
+        return _MarketPriceCard(
+          price: price,
+          onTap: price.isIndex ? () {
+            final constituents = provider.prices.where((p) => p.parentSymbol == price.symbol).toList();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MarketDetailScreen(
+                  index: price,
+                  constituents: constituents,
+                ),
+              ),
+            );
+          } : null,
+        );
+      },
     );
   }
 }
 
 class _MarketPriceCard extends StatelessWidget {
-  final MarketPrice price;
+  final MarketData price;
+  final VoidCallback? onTap;
 
-  const _MarketPriceCard({required this.price});
+  const _MarketPriceCard({required this.price, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = price.isPositive;
+    final marketProvider = Provider.of<MarketProvider>(context, listen: false);
+    final isFavorite = marketProvider.isFavorite(price.symbol);
+    final isPositive = price.changePercent >= 0;
     final changeColor = isPositive ? Colors.green : Colors.red;
     final changeIcon = isPositive ? Icons.trending_up : Icons.trending_down;
 
@@ -142,88 +118,84 @@ class _MarketPriceCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       color: AppTheme.surfaceDark,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Icon/Image
-            if (price.image != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  price.image!,
-                  width: 40,
-                  height: 40,
-                  errorBuilder: (_, __, ___) => _buildFallbackIcon(),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.star : Icons.star_border,
+                  color: isFavorite ? Colors.amber : AppTheme.textDim,
                 ),
-              )
-            else
-              _buildFallbackIcon(),
-            const SizedBox(width: 16),
-
-            // Name & Symbol
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    price.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    price.symbol,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textDim,
-                    ),
-                  ),
-                ],
+                onPressed: () {
+                  marketProvider.toggleFavorite(price.symbol);
+                },
               ),
-            ),
-
-            // Price & Change
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  Formatters.formatMoney(
-                    price.currentPrice,
-                    currency: price.symbol == 'XAU/XAG' 
-                              ? 'NONE'
-                              : (price.category == 'stock' || 
-                                 price.symbol.contains('TRY') || 
-                                 ['GA', 'CEYREK', 'YARIM', 'TAM', 'CUMHURIYET'].contains(price.symbol)) 
-                                ? 'TRY' : 'USD'
-                  ),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+              _buildFallbackIcon(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(changeIcon, size: 16, color: changeColor),
-                    const SizedBox(width: 4),
                     Text(
-                      Formatters.formatPercent(price.priceChangePercentage24h),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: changeColor,
+                      price.name, 
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getCategoryLabel(price.category, price.symbol),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textDim,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    Formatters.formatMoney(
+                      price.price,
+                      currency: price.symbol == 'AU/AG' 
+                                 ? 'USD' 
+                                 : (price.category == 'stock' || 
+                                    price.symbol.contains('TRY') || 
+                                    ['AU/TRY', 'AG/TRY', 'CEYREK', 'GA'].contains(price.symbol)) 
+                                  ? 'TRY' : 'USD'
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(changeIcon, size: 16, color: changeColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        Formatters.formatPercent(price.changePercent),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: changeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -255,10 +227,26 @@ class _MarketPriceCard extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(icon, color: color, size: 24),
     );
+  }
+
+  String _getCategoryLabel(String category, String symbol) {
+    if (symbol.contains('AU') || symbol.contains('AG') || symbol.contains('GOLD')) return 'EMTİA';
+    switch (category.toLowerCase()) {
+      case 'commodity':
+        return 'EMTİA';
+      case 'stock':
+        return 'HİSSE SENEDİ';
+      case 'currency':
+        return 'DÖVİZ';
+      case 'crypto':
+        return 'KRİPTO';
+      default:
+        return category.toUpperCase();
+    }
   }
 }

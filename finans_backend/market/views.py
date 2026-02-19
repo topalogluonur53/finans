@@ -1,47 +1,78 @@
-from rest_framework import viewsets, permissions, status
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import MarketData
-from .serializers import MarketDataSerializer
-import random
-from datetime import datetime
+from .models import MarketData, Alarm
+from .serializers import MarketDataSerializer, AlarmSerializer
+from django.contrib import messages
+from decimal import Decimal
 
-class MarketDataViewSet(viewsets.ModelViewSet):
-    queryset = MarketData.objects.all()
+# API Views
+class MarketDataViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = MarketData.objects.all().order_by('symbol')
     serializer_class = MarketDataSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly] # Allow public read? Or authenticated.
+    permission_classes = [permissions.AllowAny]
+
+    @action(detail=False, methods=['get'])
+    def categorized(self, request):
+        data = MarketData.objects.all()
+        result = {
+            'commodity': MarketDataSerializer(data.filter(market_type='commodity'), many=True).data,
+            'stock': MarketDataSerializer(data.filter(market_type='stock'), many=True).data,
+            'currency': MarketDataSerializer(data.filter(market_type='currency'), many=True).data,
+        }
+        return Response(result)
 
     @action(detail=False, methods=['get'])
     def ticker(self, request):
-        # Return simplified ticker data for marquee
-        # If no data, generate mock
-        if not MarketData.objects.exists():
-            self._generate_mock_data()
-        
-        data = MarketData.objects.all().values('symbol', 'price', 'change_percent_24h')
+        data = MarketData.objects.all().values('symbol', 'price', 'change_percent_24h', 'market_type')
         return Response(list(data))
 
-    @action(detail=False, methods=['post'])
-    def refresh(self, request):
-        # Force refresh prices (mock)
-        self._generate_mock_data()
-        return Response({'status': 'updated'})
+class AlarmViewSet(viewsets.ModelViewSet):
+    queryset = Alarm.objects.all()
+    serializer_class = AlarmSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def _generate_mock_data(self):
-        symbols = ['BTC', 'ETH', 'SOL', 'GOLD', 'USD', 'EUR', 'AAPL', 'SILVER']
-        for sym in symbols:
-            price = 100 + random.uniform(-10, 10)
-            if sym == 'BTC': price = 45000 + random.uniform(-500, 500)
-            if sym == 'ETH': price = 2800 + random.uniform(-50, 50)
-            if sym == 'GOLD': price = 2000 + random.uniform(-20, 20)
-            
-            change = random.uniform(-5, 5)
-            
-            MarketData.objects.update_or_create(
-                symbol=sym,
-                defaults={
-                    'price': price,
-                    'change_percent_24h': change,
-                    'updated_at': datetime.now()
-                }
+    def get_queryset(self):
+        return Alarm.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+# Template Views
+def piyasa_page(request):
+    """
+    Renders the market page with Emtia, Borsa, and Döviz categories.
+    """
+    context = {
+        'commodities': MarketData.objects.filter(market_type='commodity'),
+        'stocks': MarketData.objects.filter(market_type='stock'),
+        'currencies': MarketData.objects.filter(market_type='currency'),
+        'alarms': Alarm.objects.filter(user=request.user) if request.user.is_authenticated else [],
+    }
+    return render(request, 'market/piyasa.html', context)
+
+@login_required
+def create_alarm(request):
+    """
+    Handles alarm creation from the market page.
+    """
+    if request.method == 'POST':
+        symbol = request.POST.get('symbol')
+        target_price = request.POST.get('target_price')
+        condition = request.POST.get('condition')
+        
+        try:
+            Alarm.objects.create(
+                user=request.user,
+                symbol=symbol,
+                target_price=Decimal(target_price),
+                condition=condition,
+                is_active=True
             )
+            messages.success(request, f"{symbol} için alarm başarıyla kuruldu.")
+        except Exception as e:
+            messages.error(request, f"Alarm kurulurken hata oluştu: {str(e)}")
+            
+    return redirect('piyasa-page')
