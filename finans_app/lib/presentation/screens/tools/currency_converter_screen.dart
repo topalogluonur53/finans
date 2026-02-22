@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
@@ -80,7 +81,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   }
 
   double? _convert(MarketProvider market, {String? from, String? to, double? amount}) {
-    final amt = amount ?? double.tryParse(_amountController.text);
+    final amt = amount ?? double.tryParse(_amountController.text.replaceAll(',', '.'));
     if (amt == null || amt <= 0) return null;
 
     final fromRate = _getRate(market, from ?? _fromCurrency);
@@ -149,6 +150,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             child: TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  return newValue.copyWith(
+                    text: newValue.text.replaceAll('.', ','),
+                    selection: TextSelection.collapsed(offset: newValue.selection.end),
+                  );
+                }),
+              ],
               style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,

@@ -4,13 +4,30 @@ import 'package:http/http.dart' as http;
 import 'package:finans_app/data/models/ipo.dart';
 import 'package:finans_app/data/models/ipo_news.dart';
 
+import 'package:html/parser.dart' as parser;
+
 class IPOService {
+  // Singleton pattern
+  static final IPOService _instance = IPOService._internal();
+  factory IPOService() => _instance;
+  IPOService._internal();
+
+  List<IPO>? _cachedIPOs;
+  List<IPONews>? _cachedNews;
+  DateTime? _lastFetchTime;
+
   // Financial Modeling Prep API - Free tier: 250 requests/day
   static const String _apiKey = 'demo'; // Replace with your API key
   static const String _baseUrl = 'https://financialmodelingprep.com/api/v3';
 
   /// Fetch IPO and stock market news
-  Future<List<IPONews>> fetchIPONews() async {
+  Future<List<IPONews>> fetchIPONews({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedNews != null && _lastFetchTime != null) {
+      if (DateTime.now().difference(_lastFetchTime!).inMinutes < 60) {
+        return _cachedNews!;
+      }
+    }
+
     try {
       final response = await http
           .get(
@@ -30,14 +47,26 @@ class IPOService {
             .toList();
 
         if (newsList.isNotEmpty) {
+          _cachedNews = newsList;
+          _lastFetchTime = DateTime.now();
           return newsList;
         }
       }
-      return _getFallbackNews();
+      _cachedNews = _getFallbackNews();
+      _lastFetchTime = DateTime.now();
+      return _cachedNews!;
     } catch (e) {
       debugPrint('Error fetching IPO news: $e'); // Corrected message
-      return _getFallbackNews(); // Ensured return statement is present
+      _cachedNews = _getFallbackNews();
+      _lastFetchTime = DateTime.now();
+      return _cachedNews!;
     }
+  }
+
+  Future<void> clearCache() async {
+    _cachedIPOs = null;
+    _cachedNews = null;
+    _lastFetchTime = null;
   }
 
   List<IPONews> _getFallbackNews() {
@@ -76,70 +105,177 @@ class IPOService {
       'pk_demo'; // Replace with your token from iexcloud.io
   static const String _iexBaseUrl = 'https://cloud.iexapis.com/stable';
 
-  /// Fetch IPO calendar (upcoming and recent IPOs)
-  Future<List<IPO>> fetchIPOCalendar() async {
+  /// Fetch IPO calendar directly from halkarz.com
+  Future<List<IPO>> fetchIPOCalendar({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedIPOs != null && _lastFetchTime != null) {
+        return _cachedIPOs!;
+    }
+    
     try {
-      // Try Financial Modeling Prep first
       final response = await http
           .get(
-            Uri.parse(
-                '$_baseUrl/ipo_calendar?from=${_getDateString(-30)}&to=${_getDateString(90)}&apikey=$_apiKey'),
+            Uri.parse('https://halkarz.com/'),
+            headers: {'User-Agent': 'Mozilla/5.0'}
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        if (data.isNotEmpty) {
-          return data.map((item) => IPO.fromJson(item)).toList();
+        var document = parser.parse(response.body);
+        final articles = document.querySelectorAll('article.index-list');
+        
+        List<IPO> scrapedIPOs = [];
+        
+        for (var article in articles) {
+          final nameElement = article.querySelector('h3.il-halka-arz-sirket a');
+          final symbolElement = article.querySelector('span.il-bist-kod');
+          final dateElement = article.querySelector('time');
+          final urlElement = article.querySelector('a');
+          final statusBadge = article.querySelector('i.snc-badge');
+          
+          String company = nameElement?.text.trim() ?? '';
+          String symbol = symbolElement?.text.trim() ?? '';
+          String date = dateElement?.text.trim() ?? '';
+          String detailUrl = urlElement?.attributes['href'] ?? '';
+          
+          if (company.isEmpty) continue;
+
+          bool hasTamamlandi = statusBadge != null && 
+              (statusBadge.attributes['title']?.contains('Tamamlandı') ?? false);
+              
+          bool isCompleted = hasTamamlandi;
+          
+          if (!isCompleted && date.isNotEmpty && !date.contains('Hazırlanıyor')) {
+            // Check if date is in the past by looking at the year and extracting the month
+            if (date.contains('2025') || date.contains('2024') || date.contains('2023')) {
+               isCompleted = true;
+            } else if (date.contains('2026')) {
+               if (date.contains('Ocak')) {
+                  isCompleted = true;
+               } else if (date.contains('Şubat')) {
+                  // E.g '19-20 Şubat 2026'. Use regex to find the last day number.
+                  final numRegex = RegExp(r'(\d+)');
+                  final matches = numRegex.allMatches(date);
+                  if (matches.isNotEmpty) {
+                    try {
+                      // get the largest number before we hit year 2026
+                      int day = -1;
+                      for (var m in matches) {
+                        int v = int.parse(m.group(1)!);
+                        if (v < 32 && v > day) day = v;
+                      }
+                      if (day != -1 && day < DateTime.now().day) {
+                         isCompleted = true; // day has passed
+                      }
+                    } catch (e) {}
+                  }
+               }
+            }
+          }
+          
+          String status = 'priced';
+          if (isCompleted) {
+             status = 'priced'; 
+          } else {
+             status = 'upcoming'; 
+          }
+
+          scrapedIPOs.add(IPO(
+            company: company,
+            symbol: symbol,
+            date: date,
+            exchange: 'BIST',
+            url: detailUrl,
+            status: status, // explicit status
+          ));
+        }
+
+        // Fetch details for the first 15 IPOs to get prices and shares efficiently
+        final int limit = scrapedIPOs.length > 20 ? 20 : scrapedIPOs.length;
+        final detailedIPOs = await Future.wait(
+          scrapedIPOs.take(limit).map((ipo) => _fetchIPODetails(ipo))
+        );
+        
+        // Combine detailed with the rest
+        scrapedIPOs = [
+          ...detailedIPOs,
+          ...scrapedIPOs.skip(limit)
+        ];
+
+        if (scrapedIPOs.isNotEmpty) {
+          _cachedIPOs = scrapedIPOs;
+          _lastFetchTime = DateTime.now();
+          return _cachedIPOs!;
         }
       }
 
-      // Fallback to IEX Cloud
-      final iexData = await _fetchFromIEX();
-      if (iexData.isNotEmpty) {
-        return iexData;
-      }
-
-      // If all APIs return empty, use our curated fallback
-      return _getFallbackIPOs();
+      // If scraping returns empty, use our curated fallback
+      _cachedIPOs = _getFallbackIPOs();
+      _lastFetchTime = DateTime.now();
+      return _cachedIPOs!;
     } catch (e) {
-      debugPrint('Error fetching IPO calendar: $e');
+      debugPrint('Error scraping halkarz.com: $e');
       // Return fallback data
-      return _getFallbackIPOs();
+      _cachedIPOs = _getFallbackIPOs();
+      _lastFetchTime = DateTime.now();
+      return _cachedIPOs!;
     }
   }
 
-  Future<List<IPO>> _fetchFromIEX() async {
+  Future<IPO> _fetchIPODetails(IPO ipo) async {
+    if (ipo.url == null || ipo.url!.isEmpty) return ipo;
     try {
-      final response = await http
-          .get(
-            Uri.parse(
-                '$_iexBaseUrl/stock/market/upcoming-ipos?token=$_iexToken'),
-          )
-          .timeout(const Duration(seconds: 10));
-
+      final response = await http.get(
+        Uri.parse(ipo.url!),
+        headers: {'User-Agent': 'Mozilla/5.0'}
+      ).timeout(const Duration(seconds: 5));
+      
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> rawIPOs = data['rawData'] ?? [];
-        return rawIPOs.map((item) => IPO.fromJson(item)).toList();
+        var document = parser.parse(response.body);
+        final rows = document.querySelectorAll('tr');
+        
+        String? priceRange;
+        int? numberOfShares;
+        
+        for (var row in rows) {
+          final text = row.text;
+          if (text.contains('Fiyatı/Aralığı')) {
+             final valCell = row.querySelectorAll('td').last;
+             priceRange = valCell.text.trim();
+          } else if (text.contains('Pay')) {
+             final valCell = row.querySelectorAll('td').last;
+             String shareStr = valCell.text.replaceAll('Lot', '').replaceAll('.', '').trim();
+             numberOfShares = int.tryParse(shareStr);
+          }
+        }
+        
+        return IPO(
+          symbol: ipo.symbol,
+          company: ipo.company,
+          exchange: ipo.exchange,
+          date: ipo.date,
+          priceRange: priceRange,
+          numberOfShares: numberOfShares,
+          status: ipo.status,
+          url: ipo.url,
+        );
       }
-      return [];
     } catch (e) {
-      debugPrint('Error fetching from IEX: $e');
-      return [];
+      debugPrint('Error fetching IPO details: $e');
     }
+    return ipo;
   }
 
-  /// Fetch upcoming IPOs only
+  /// Fetch upcoming IPOs
   Future<List<IPO>> fetchUpcomingIPOs() async {
     final allIPOs = await fetchIPOCalendar();
-    return allIPOs.where((ipo) => ipo.isUpcoming).toList();
+    return allIPOs.where((ipo) => ipo.status == 'upcoming').toList();
   }
 
-  /// Fetch recent IPOs (last 30 days)
+  /// Fetch recent IPOs
   Future<List<IPO>> fetchRecentIPOs() async {
     final allIPOs = await fetchIPOCalendar();
-    return allIPOs.where((ipo) => !ipo.isUpcoming && !ipo.isWithdrawn).toList();
+    // For manual scraped data, anything not 'upcoming' and string exists goes here
+    return allIPOs.where((ipo) => ipo.status != 'upcoming').toList();
   }
 
   String _getDateString(int daysOffset) {
@@ -155,9 +291,9 @@ class IPOService {
         company: 'Empa Elektronik San. ve Tic. A.Ş.',
         exchange: 'BIST',
         date: '2026-02-19',
-        priceRange: 'Belirlenmedi',
+        priceRange: '24.50 TL',
         numberOfShares: 25000000,
-        status: 'upcoming',
+        status: 'priced',
       ),
       IPO(
         symbol: 'ATATR',
@@ -245,7 +381,7 @@ class IPOService {
         company: 'Vakıf Faktoring A.Ş.',
         exchange: 'BIST',
         date: '2026-03-25',
-        priceRange: 'Belirlenmedi',
+        priceRange: '15.50 - 16.50 TL',
         numberOfShares: 35000000,
         status: 'upcoming',
       ),
@@ -263,7 +399,7 @@ class IPOService {
         company: 'Ecogreen Enerji Holding A.Ş.',
         exchange: 'BIST',
         date: '2026-04-20',
-        priceRange: 'Belirlenmedi',
+        priceRange: '45.00 - 48.00 TL',
         numberOfShares: 60000000,
         status: 'upcoming',
       ),

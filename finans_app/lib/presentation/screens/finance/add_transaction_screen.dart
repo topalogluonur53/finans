@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/data/models/finance.dart';
@@ -59,7 +60,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
         if (widget.type == TransactionType.income) {
           final income = Income(
-            amount: double.parse(_amountController.text),
+            amount: double.parse(_amountController.text.replaceAll(',', '.')),
             source: _sourceController.text,
             date: _selectedDate,
             description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
@@ -67,7 +68,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           success = await provider.addIncome(income);
         } else {
           final expense = Expense(
-            amount: double.parse(_amountController.text),
+            amount: double.parse(_amountController.text.replaceAll(',', '.')),
             category: _sourceController.text,
             date: _selectedDate,
             description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
@@ -121,9 +122,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    return newValue.copyWith(
+                      text: newValue.text.replaceAll('.', ','),
+                      selection: TextSelection.collapsed(offset: newValue.selection.end),
+                    );
+                  }),
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Tutar',
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.currency_lira),
                 ),
                 validator: (value) => value!.isEmpty ? 'Gerekli' : null,
               ),

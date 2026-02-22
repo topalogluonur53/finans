@@ -56,8 +56,6 @@ class AuthProvider extends ChangeNotifier {
         if (username.toLowerCase() == 'demo' && password == '123456') {
           _token = 'offline_demo_token';
           _user = User(id: 0, username: 'demo', email: 'demo@finans.app', firstName: 'Önizleme', lastName: 'Modu');
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('access_token', _token!);
         } else {
           throw Exception('Login failed: ${response?.body ?? 'Connection Error'}');
         }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/data/models/ipo.dart';
 import 'package:finans_app/data/services/ipo_service.dart';
+import 'package:finans_app/presentation/screens/tools/ipo_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:finans_app/data/models/ipo_news.dart';
@@ -36,16 +37,20 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  Future<void> _loadIPOData() async {
+  Future<void> _loadIPOData({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
+    if (forceRefresh) {
+      await _service.clearCache();
+    }
+
     try {
       final results = await Future.wait([
-        _service.fetchIPOCalendar(),
-        _service.fetchIPONews(),
+        _service.fetchIPOCalendar(forceRefresh: forceRefresh),
+        _service.fetchIPONews(forceRefresh: forceRefresh),
       ]);
       
       final List<IPO> allIPOs = results[0] as List<IPO>;
@@ -73,7 +78,7 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadIPOData,
+            onPressed: () => _loadIPOData(forceRefresh: true),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -122,7 +127,7 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
     }
 
     return RefreshIndicator(
-      onRefresh: _loadIPOData,
+      onRefresh: () => _loadIPOData(forceRefresh: true),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _ipoNews.length,
@@ -226,7 +231,7 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _loadIPOData,
+              onPressed: () => _loadIPOData(forceRefresh: true),
               icon: const Icon(Icons.refresh),
               label: const Text('Tekrar Dene'),
             ),
@@ -258,7 +263,7 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
     }
 
     return RefreshIndicator(
-      onRefresh: _loadIPOData,
+      onRefresh: () => _loadIPOData(forceRefresh: true),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: ipos.length,
@@ -344,7 +349,14 @@ class _IPOCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _showIPODetails(context),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => IPODetailScreen(ipo: ipo),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -475,81 +487,5 @@ class _IPOCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  void _showIPODetails(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surfaceDark,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              ipo.company,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textLight,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${ipo.symbol} • ${ipo.exchange}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppTheme.textDim,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildDetailRow(Icons.calendar_today, 'Halka Arz Tarihi', ipo.displayDate),
-            const SizedBox(height: 12),
-            if (ipo.priceRange != null)
-              _buildDetailRow(Icons.attach_money, 'Fiyat Aralığı', ipo.priceRange!),
-            if (ipo.price != null)
-              _buildDetailRow(
-                Icons.price_check, 
-                'Kesin Fiyat', 
-                ipo.exchange == 'BIST' 
-                    ? '${ipo.price!.toStringAsFixed(2)} TL' 
-                    : '\$${ipo.price!.toStringAsFixed(2)}'
-              ),
-            if (ipo.numberOfShares != null) ...[
-              const SizedBox(height: 12),
-              _buildDetailRow(
-                Icons.pie_chart,
-                'Toplam Hisse',
-                ipo.numberOfShares!.toString().replaceAllMapped(
-                  RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                  (Match m) => '${m[1]},',
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            if (ipo.url != null)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _launchURL(ipo.url!),
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('Detaylı Bilgi'),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _launchURL(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }

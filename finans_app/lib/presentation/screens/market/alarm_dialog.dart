@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/data/providers/auth_provider.dart';
@@ -222,6 +223,14 @@ class _AlarmDialogState extends State<AlarmDialog> {
                         TextFormField(
                           controller: _priceController,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [
+                            TextInputFormatter.withFunction((oldValue, newValue) {
+                              return newValue.copyWith(
+                                text: newValue.text.replaceAll('.', ','),
+                                selection: TextSelection.collapsed(offset: newValue.selection.end),
+                              );
+                            }),
+                          ],
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: AppTheme.backgroundDark,

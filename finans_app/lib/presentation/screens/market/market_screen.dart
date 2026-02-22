@@ -57,7 +57,7 @@ class _MarketScreenState extends State<MarketScreen>
           .where((p) => p.category.toLowerCase() == 'commodity')
           .toList()),
       'stock': _filter(marketProvider.prices
-          .where((p) => (p.category.toLowerCase() == 'stock' || p.category.toLowerCase() == 'index') && p.parentSymbol == null)
+          .where((p) => (p.category.toLowerCase() == 'stock' || p.category.toLowerCase() == 'index') && p.symbol.endsWith('.IS'))
           .toList()),
       'currency': _filter(marketProvider.prices
           .where((p) => p.category.toLowerCase() == 'currency' && p.parentSymbol == null)

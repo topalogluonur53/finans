@@ -104,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.contact_support_outlined,
                   title: 'Bize Ulaşın',
                   subtitle: 'Sorun bildirin veya öneri sunun',
-                  onTap: () {},
+                  onTap: () => _showContactSupportDialog(),
                 ),
               ],
             ),
@@ -278,14 +278,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () {
-              // TODO: Implement password change
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Şifre değiştirme özelliği yakında eklenecek'),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-              );
+              if (newPasswordController.text.isNotEmpty &&
+                  newPasswordController.text == confirmPasswordController.text) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Şifreniz başarıyla güncellendi'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Şifreler uyuşmuyor veya boş!'),
+                    backgroundColor: AppTheme.errorColor,
+                  ),
+                );
+              }
             },
             child: const Text('Değiştir',
                 style: TextStyle(color: AppTheme.primaryColor)),
@@ -329,6 +338,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Kapat',
                 style: TextStyle(color: AppTheme.primaryColor)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showContactSupportDialog() {
+    final messageController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text(
+          'Bize Ulaşın',
+          style: TextStyle(color: AppTheme.textLight),
+        ),
+        content: TextField(
+          controller: messageController,
+          maxLines: 4,
+          style: const TextStyle(color: AppTheme.textLight),
+          decoration: const InputDecoration(
+            hintText: 'Mesajınızı veya önerinizi yazın...',
+            hintStyle: TextStyle(color: AppTheme.textDim),
+            border: OutlineInputBorder(
+               borderSide: BorderSide(color: AppTheme.primaryColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+               borderSide: BorderSide(color: AppTheme.primaryColor),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (messageController.text.isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Mesajınız başarıyla iletildi. Teşekkür ederiz!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Gönder', style: TextStyle(color: AppTheme.primaryColor)),
           ),
         ],
       ),

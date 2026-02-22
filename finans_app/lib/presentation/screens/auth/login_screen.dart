@@ -181,7 +181,9 @@ class _LoginScreenState extends State<LoginScreen>
       final auth = Provider.of<AuthProvider>(context, listen: false);
       await auth.login(loginUsername, _passwordController.text);
           
-      await _saveRememberMe(auth);
+      if (loginUsername.toLowerCase() != 'demo') {
+        await _saveRememberMe(auth);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _passwordController.clear());

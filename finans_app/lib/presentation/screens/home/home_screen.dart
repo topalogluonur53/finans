@@ -1,4 +1,7 @@
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
@@ -11,6 +14,9 @@ import 'package:finans_app/data/providers/portfolio_provider.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
 import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart';
 import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
+import 'package:finans_app/presentation/screens/banks/banks_screen.dart';
+import 'package:finans_app/presentation/screens/debts/receivables_screen.dart';
+import 'package:finans_app/presentation/screens/debts/debts_screen.dart';
 import 'dashboard_view.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,7 +29,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // Flattened the list into a getter or inside build to access setState
   List<Widget> get _screens => [
         DashboardView(
           onNavigateToTab: (index) {
@@ -38,11 +43,40 @@ class _HomeScreenState extends State<HomeScreen> {
         const ToolsScreen(),
       ];
 
-  void _shareApp() {
-    Share.share(
-      'Finans App ile finansal durumunuzu takip edin! Portföy yönetimi, gelir-gider takibi ve daha fazlası...',
-      subject: 'Finans App',
-    );
+  Future<void> _shareApp() async {
+    const appName = 'Finans App';
+    const playStoreUrl =
+        'https://play.google.com/store/apps/details?id=com.finans.finans_app';
+    const appStoreUrl =
+        'https://apps.apple.com/app/finans-app/id000000000'; // App Store'a yüklenince güncelleyin
+
+    final message = '''$appName ile finansal durumunuzu kolayca takip edin! 💰
+
+✅ Portföy yönetimi
+✅ Gelir-gider takibi
+✅ Piyasa verileri
+✅ Halka arz bilgileri
+
+📱 Android: $playStoreUrl
+🍎 iOS: $appStoreUrl''';
+
+    try {
+      // assets'teki ikonu temp klasörüne kopyala
+      final byteData =
+          await rootBundle.load('assets/icons/app_icon.png');
+      final tempDir = await getTemporaryDirectory();
+      final iconFile = File('${tempDir.path}/finans_app_icon.png');
+      await iconFile.writeAsBytes(byteData.buffer.asUint8List());
+
+      await Share.shareXFiles(
+        [XFile(iconFile.path, mimeType: 'image/png')],
+        text: message,
+        subject: appName,
+      );
+    } catch (_) {
+      // İkon paylaşılamazsa sadece metin gönder
+      Share.share(message, subject: appName);
+    }
   }
 
   @override
@@ -58,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              // Handle refresh based on current screen
               if (_currentIndex == 0) {
                 Provider.of<PortfolioProvider>(context, listen: false)
                     .fetchAssets();
@@ -83,86 +116,84 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppTheme.backgroundDark,
         child: Column(
           children: [
-            // Premium User Header
-            Container(
-              padding: const EdgeInsets.only(
-                  top: 50, bottom: 20, left: 20, right: 20),
-              decoration: const BoxDecoration(
-                color: Color(0xFF002F6C), // İşBankası Laciverti
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0),
-                ),
-              ),
-              child: Row(
+            // ── Premium User Header ──────────────────────────────────
+            _DrawerHeader(authProvider: authProvider),
+
+            // ── Navigation Menu ─────────────────────────────────────
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                 children: [
-                  CircleAvatar(
-                    radius: 35,
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      (authProvider.username ?? 'K')
-                          .substring(0, 1)
-                          .toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
+                  // Section label
+                  _SectionLabel(label: 'Finansal'),
+                  _MinimalTile(
+                    icon: Icons.account_balance_outlined,
+                    title: 'Bankalar',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const BanksScreen()));
+                    },
                   ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          authProvider.username ?? 'Kullanıcı',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          authProvider.email ?? '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+                  _MinimalTile(
+                    icon: Icons.call_received_outlined,
+                    title: 'Alacak',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ReceivablesScreen()));
+                    },
+                  ),
+                  _MinimalTile(
+                    icon: Icons.call_made_outlined,
+                    title: 'Verecek',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const DebtsScreen()));
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+                  Divider(color: AppTheme.textDim.withOpacity(0.18), height: 1),
+                  const SizedBox(height: 8),
+
+                  // Section label
+                  _SectionLabel(label: 'Genel'),
+                  _MinimalTile(
+                    icon: Icons.share_outlined,
+                    title: 'Uygulamayi Paylas',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _shareApp();
+                    },
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            // Menu Items with custom styling
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+            // ── Bottom: Profile & Settings & Logout ─────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: AppTheme.textDim.withOpacity(0.18),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Column(
                 children: [
-                  _buildDrawerTile(
-                    icon: Icons.person_outline,
-                    title: 'Kullanıcı Bilgileri',
+                  _MinimalTile(
+                    icon: Icons.person_outline_rounded,
+                    title: 'Kullanici Bilgileri',
                     onTap: () {
                       Navigator.pop(context);
                       _showUserInfoDialog(context, authProvider);
                     },
                   ),
-                  _buildDrawerTile(
-                    icon: Icons.candlestick_chart,
-                    title: 'Piyasa Verileri',
-                    onTap: () {
-                      Navigator.pop(context);
-                      setState(() => _currentIndex = 3);
-                    },
-                  ),
-                  _buildDrawerTile(
+                  _MinimalTile(
                     icon: Icons.settings_outlined,
                     title: 'Ayarlar',
                     onTap: () {
@@ -170,47 +201,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.pushNamed(context, '/settings');
                     },
                   ),
-                  _buildDrawerTile(
-                    icon: Icons.share_outlined,
-                    title: 'Uygulamayı Paylaş',
-                    onTap: () {
-                      Navigator.pop(context);
-                      _shareApp();
-                    },
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: Divider(color: AppTheme.surfaceDark, thickness: 1),
-                  ),
-                  _buildDrawerTile(
-                    icon: Icons.help_outline,
-                    title: 'Yardım & Destek',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Destek aksiyonu
-                    },
+                  const SizedBox(height: 4),
+                  // Logout
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16, top: 4),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: AppTheme.errorColor.withValues(alpha: 0.1),
+                          foregroundColor: AppTheme.errorColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        icon: const Icon(Icons.logout_rounded, size: 20),
+                        label: const Text(
+                          'Cikis Yap',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showLogoutDialog(context, authProvider);
+                        },
+                      ),
+                    ),
                   ),
                 ],
-              ),
-            ),
-
-            // Logout Button at the bottom
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: ListTile(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15)),
-                tileColor: AppTheme.errorColor.withValues(alpha: 0.1),
-                leading: const Icon(Icons.logout, color: AppTheme.errorColor),
-                title: const Text(
-                  'Çıkış Yap',
-                  style: TextStyle(
-                      color: AppTheme.errorColor, fontWeight: FontWeight.bold),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showLogoutDialog(context, authProvider);
-                },
               ),
             ),
           ],
@@ -239,11 +256,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Özet'),
-                _buildNavItem(1, Icons.pie_chart_outline_rounded, Icons.pie_chart_rounded, 'Portföy'),
+                _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Ozet'),
+                _buildNavItem(1, Icons.pie_chart_outline_rounded, Icons.pie_chart_rounded, 'Portfolyo'),
                 _buildNavItem(2, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Finans'),
                 _buildNavItem(3, Icons.candlestick_chart_outlined, Icons.candlestick_chart_rounded, 'Piyasa'),
-                _buildNavItem(4, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Araçlar'),
+                _buildNavItem(4, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Araclar'),
               ],
             ),
           ),
@@ -323,15 +340,15 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getTitle() {
     switch (_currentIndex) {
       case 0:
-        return 'Özet';
+        return 'Ozet';
       case 1:
-        return 'Portföy';
+        return 'Portfolyo';
       case 2:
         return 'Finans';
       case 3:
         return 'Piyasa';
       case 4:
-        return 'Araçlar';
+        return 'Araclar';
       default:
         return 'Finans App';
     }
@@ -348,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(Icons.person, color: AppTheme.primaryColor),
             SizedBox(width: 10),
             Text(
-              'Profil Detayları',
+              'Profil Detaylari',
               style: TextStyle(color: AppTheme.textLight),
             ),
           ],
@@ -371,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildInfoRow('Kullanıcı Adı', authProvider.username ?? '-'),
+            _buildInfoRow('Kullanici Adi', authProvider.username ?? '-'),
             const Divider(color: AppTheme.textDim, height: 20),
             _buildInfoRow(
                 'Ad Soyad',
@@ -420,53 +437,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawerTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: AppTheme.textLight,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      trailing:
-          const Icon(Icons.chevron_right, color: AppTheme.textDim, size: 20),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      hoverColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-    );
-  }
-
   void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceDark,
         title: const Text(
-          'Çıkış Yap',
+          'Cikis Yap',
           style: TextStyle(color: AppTheme.textLight),
         ),
         content: const Text(
-          'Çıkış yapmak istediğinizden emin misiniz?',
+          'Cikis yapmak istediginizden emin misiniz?',
           style: TextStyle(color: AppTheme.textDim),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child:
-                const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
+                const Text('Iptal', style: TextStyle(color: AppTheme.textDim)),
           ),
           TextButton(
             onPressed: () {
               authProvider.logout();
               Navigator.pop(context);
             },
-            child: const Text('Çıkış Yap',
+            child: const Text('Cikis Yap',
                 style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
@@ -474,6 +469,163 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+// ── Drawer Header Widget ──────────────────────────────────────────────────────
+
+class _DrawerHeader extends StatelessWidget {
+  final AuthProvider authProvider;
+  const _DrawerHeader({required this.authProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    final firstName = authProvider.user?.firstName?.trim() ?? '';
+    final lastName = authProvider.user?.lastName?.trim() ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    final hasFullName = fullName.isNotEmpty;
+    final displayName = hasFullName ? fullName : (authProvider.username ?? 'Kullanici');
+    final initial = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : 'K';
+    final subtitle = hasFullName
+        ? (authProvider.username ?? authProvider.email ?? '')
+        : (authProvider.email ?? '');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 56, bottom: 24, left: 20, right: 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF003380), Color(0xFF001A4D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Avatar
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 2.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.white,
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF003380),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Name & subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.2,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.65),
+                      letterSpacing: 0.2,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Section Label ─────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.primaryColor.withOpacity(0.65),
+          letterSpacing: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Minimal Drawer Tile ────────────────────────────────────────────────────────
+
+class _MinimalTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _MinimalTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      leading: Icon(icon, color: AppTheme.primaryColor, size: 24),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: AppTheme.textLight,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      hoverColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+      splashColor: AppTheme.primaryColor.withValues(alpha: 0.12),
+    );
+  }
+}
+
+// ── Transaction Type Dialog ───────────────────────────────────────────────────
 
 class TransactionTypeDialog extends StatelessWidget {
   const TransactionTypeDialog({super.key});
@@ -493,7 +645,7 @@ class TransactionTypeDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'İşlem Türü Seçin',
+            'Islem Turu Secin',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 30),

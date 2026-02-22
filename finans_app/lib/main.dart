@@ -51,14 +51,68 @@ class MyApp extends StatelessWidget {
         builder: (context, auth, _) {
           print('Main: Building application... isLoading=${auth.isLoading}, isAuthenticated=${auth.isAuthenticated}');
           return MaterialApp(
-            title: 'Finans App v2.0',
+            title: 'Finans App',
             theme: AppTheme.darkTheme,
             builder: (context, child) {
               if (auth.isLoading) {
                 print('Main: Showing Loading Screen');
-                return const Scaffold(
+                return Scaffold(
+                  backgroundColor: const Color(0xFF002F6C), // Same as login header
                   body: Center(
-                    child: CircularProgressIndicator(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'O',
+                            style: TextStyle(
+                              color: Color(0xFF002F6C),
+                              fontSize: 50,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'FinansApp',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Kişisel Finans Yönetimi',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 60),
+                        const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }

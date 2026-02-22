@@ -17,7 +17,7 @@ class Income {
     return Income(
       id: json['id'],
       amount: double.parse(json['amount'].toString()),
-      source: json['source'],
+      source: json['category'] ?? json['source'] ?? '',
       date: DateTime.parse(json['date']),
       description: json['description'],
     );
@@ -26,8 +26,8 @@ class Income {
   Map<String, dynamic> toJson() {
     return {
       'amount': amount,
-      'source': source,
-      'date': date.toIso8601String(),
+      'category': source,
+      'date': "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
       'description': description,
     };
   }
@@ -62,7 +62,7 @@ class Expense {
     return {
       'amount': amount,
       'category': category,
-      'date': date.toIso8601String(),
+      'date': "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
       'description': description,
     };
   }

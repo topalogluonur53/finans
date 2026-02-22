@@ -4,6 +4,8 @@ import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
 import 'package:finans_app/data/models/asset.dart';
 import 'package:finans_app/data/providers/market_provider.dart';
+import 'package:finans_app/data/providers/portfolio_provider.dart';
+import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart';
 
 class AssetListItem extends StatelessWidget {
   final Asset asset;
@@ -83,9 +85,70 @@ class AssetListItem extends StatelessWidget {
                       Text('Notlar: ${asset.notes!}',
                           style: const TextStyle(fontStyle: FontStyle.italic)),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Kapat'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context); // Close bottom sheet
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AddAssetScreen(assetToEdit: asset),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit, size: 18),
+                          label: const Text('Düzenle'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        if (asset.id != null)
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  backgroundColor: AppTheme.surfaceDark,
+                                  title: const Text('Varlığı Sil', style: TextStyle(color: Colors.white)),
+                                  content: const Text('Bu varlığı silmek istediğinizden emin misiniz?', style: TextStyle(color: AppTheme.textLight)),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text('Sil', style: TextStyle(color: Colors.redAccent)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              
+                              if (confirm == true && context.mounted) {
+                                final success = await Provider.of<PortfolioProvider>(context, listen: false).deleteAsset(asset.id!);
+                                if (context.mounted) {
+                                  Navigator.pop(context); // Close bottom sheet
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(success ? 'Varlık silindi' : 'Varlık silinirken hata oluştu'),
+                                      backgroundColor: success ? Colors.green : Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.delete, size: 18),
+                            label: const Text('Sil'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                              foregroundColor: Colors.redAccent,
+                              elevation: 0,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),

@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/data/models/asset.dart';
 import 'package:finans_app/data/providers/portfolio_provider.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/presentation/widgets/dynamic_button.dart';
 
 class AddAssetScreen extends StatefulWidget {
-  const AddAssetScreen({super.key});
+  final Asset? assetToEdit;
+
+  const AddAssetScreen({super.key, this.assetToEdit});
 
   @override
   State<AddAssetScreen> createState() => _AddAssetScreenState();
@@ -28,6 +31,26 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   AssetType? _selectedType;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.assetToEdit != null) {
+      final asset = widget.assetToEdit!;
+      _nameController.text = asset.name;
+      _symbolController.text = asset.symbol ?? '';
+      _quantityController.text = asset.quantity.toString().replaceAll('.', ',');
+      _priceController.text = asset.purchasePrice.toString().replaceAll('.', ',');
+      _notesController.text = asset.notes ?? '';
+      _selectedDate = asset.purchaseDate;
+      try {
+        _selectedType = AssetType.values.firstWhere((e) =>
+            e.backendType == asset.type ||
+            e.name.toLowerCase() == asset.type.toLowerCase());
+        _selectedCategory = _selectedType!.category;
+      } catch (_) {}
+    }
+  }
 
   @override
   void dispose() {
@@ -61,34 +84,37 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
 
       try {
         final asset = Asset(
+          id: widget.assetToEdit?.id,
           type: _selectedType!.backendType,
           name: _nameController.text.isEmpty
               ? _selectedType!.label
               : _nameController.text,
           symbol:
               _symbolController.text.isEmpty ? null : _symbolController.text,
-          quantity: double.parse(_quantityController.text),
-          purchasePrice: double.parse(_priceController.text),
+          quantity: double.parse(_quantityController.text.replaceAll(',', '.')),
+          purchasePrice: double.parse(_priceController.text.replaceAll(',', '.')),
           purchaseDate: _selectedDate,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
         );
 
-        final success =
-            await Provider.of<PortfolioProvider>(context, listen: false)
-                .addAsset(asset);
+        final success = widget.assetToEdit == null
+            ? await Provider.of<PortfolioProvider>(context, listen: false)
+                .addAsset(asset)
+            : await Provider.of<PortfolioProvider>(context, listen: false)
+                .updateAsset(asset);
 
         if (mounted) {
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Varlık başarıyla eklendi!'),
+              SnackBar(
+                  content: Text(widget.assetToEdit == null ? 'Varlık başarıyla eklendi!' : 'Varlık başarıyla güncellendi!'),
                   backgroundColor: Colors.green),
             );
             Navigator.pop(context);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Varlık eklenirken hata oluştu.'),
+              SnackBar(
+                  content: Text(widget.assetToEdit == null ? 'Varlık eklenirken hata oluştu.' : 'Varlık güncellenirken hata oluştu.'),
                   backgroundColor: Colors.red),
             );
           }
@@ -177,7 +203,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        title: const Text('Varlık Ekle', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(widget.assetToEdit == null ? 'Varlık Ekle' : 'Varlık Düzenle', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -211,7 +237,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               
               const SizedBox(height: 24),
               DynamicButton(
-                label: 'Kaydet',
+                label: widget.assetToEdit == null ? 'Kaydet' : 'Güncelle',
                 onTap: _submit,
                 isLoading: _isLoading,
                 icon: Icons.check,
@@ -427,6 +453,21 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+      inputFormatters: isNumber
+          ? [
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                final text = newValue.text.replaceAll('.', ',');
+                if (RegExp(r'^\d*\,?\d{0,2}$').hasMatch(text)) {
+                  return newValue.copyWith(
+                    text: text,
+                    // If selection end is out of bounds after a replacement, handle it, but here lengths are the same.
+                    selection: TextSelection.collapsed(offset: newValue.selection.end),
+                  );
+                }
+                return oldValue;
+              }),
+            ]
+          : null,
       validator: validator,
       style: const TextStyle(fontSize: 13, color: AppTheme.textLight, fontWeight: FontWeight.bold),
       decoration: InputDecoration(

@@ -3,10 +3,10 @@ class IPO {
   final String company;
   final String exchange;
   final String? date;
+  final double? price;
   final String? priceRange;
   final int? numberOfShares;
-  final double? price;
-  final String? status; // 'upcoming', 'priced', 'withdrawn'
+  final String? status;
   final String? url;
 
   IPO({
@@ -14,9 +14,9 @@ class IPO {
     required this.company,
     required this.exchange,
     this.date,
+    this.price,
     this.priceRange,
     this.numberOfShares,
-    this.price,
     this.status,
     this.url,
   });
@@ -37,14 +37,10 @@ class IPO {
 
   bool get isUpcoming {
     if (status?.toLowerCase() == 'upcoming') return true;
-    if (date != null) {
-      final dt = DateTime.tryParse(date!);
-      if (dt != null && dt.isAfter(DateTime.now())) return true;
-    }
     return false;
   }
   
-  bool get isPriced => status?.toLowerCase() == 'priced' || price != null;
+  bool get isPriced => status?.toLowerCase() == 'priced';
   
   bool get isWithdrawn => status?.toLowerCase() == 'withdrawn';
 
@@ -55,13 +51,22 @@ class IPO {
     return 'Bilinmiyor';
   }
 
-  String get displayDate {
-    if (date == null) return 'Tarih Belirsiz';
-    try {
-      final dt = DateTime.parse(date!);
-      return '${dt.day}.${dt.month}.${dt.year}';
-    } catch (e) {
-      return date!;
+  String get displayPrice {
+    if (price != null) {
+      return '${(price! / 1).toStringAsFixed(2)} TL';
     }
+    return 'Belirlenmedi';
+  }
+
+  String get displayDate {
+    if (date != null && date!.isNotEmpty) {
+      if (date!.contains('-') && date!.split('-').length == 3 && date!.length == 10) {
+          // ISO format
+          final parts = date!.split('-');
+          return '${parts[2]}.${parts[1]}.${parts[0]}';
+      }
+      return date!; // It's probably already Turkish format from halkarz
+    }
+    return 'Açıklanmadı';
   }
 }

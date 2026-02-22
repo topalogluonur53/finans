@@ -78,6 +78,39 @@ class PortfolioProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateAsset(Asset asset) async {
+    if (_token == null || asset.id == null) return false;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.assetsEndpoint}${asset.id}/');
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Authorization': 'Bearer $_token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(asset.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchAssets();
+        return true;
+      } else {
+        debugPrint('Failed to update asset: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error updating asset: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Calculation Helpers
   double getTotalValue(MarketProvider market) {
     double total = 0;

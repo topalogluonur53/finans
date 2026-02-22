@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/data/providers/note_provider.dart';
 import 'package:finans_app/data/models/note.dart';
@@ -6,7 +6,8 @@ import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:uuid/uuid.dart';
 
 const List<int> kNoteColors = [
-  0xFF2D2D44, // Dark (default)
+  0xFF1E1E2E, // Dark (default)
+  0xFF2D2D44, // Dark blue
   0xFFFFCDD2, // Red
   0xFFF8BBD0, // Pink
   0xFFE1BEE7, // Purple
@@ -34,23 +35,27 @@ class AddEditNoteScreen extends StatefulWidget {
   State<AddEditNoteScreen> createState() => _AddEditNoteScreenState();
 }
 
-class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
+class _AddEditNoteScreenState extends State<AddEditNoteScreen>
+    with SingleTickerProviderStateMixin {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   late TextEditingController _tagController;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
   int _selectedColor = kNoteColors[0];
   bool _isNewNote = true;
   bool _isPinned = false;
   List<String> _tags = [];
+  final FocusNode _titleFocus = FocusNode();
+  final FocusNode _contentFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _isNewNote = widget.note == null;
-    _titleController =
-        TextEditingController(text: widget.note?.title ?? '');
-    _contentController =
-        TextEditingController(text: widget.note?.content ?? '');
+    _titleController = TextEditingController(text: widget.note?.title ?? '');
+    _contentController = TextEditingController(text: widget.note?.content ?? '');
     _tagController = TextEditingController();
     _selectedColor = widget.note?.color ?? kNoteColors[0];
     _isPinned = widget.note?.isPinned ?? false;
@@ -58,6 +63,13 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
 
     _titleController.addListener(() => setState(() {}));
     _contentController.addListener(() => setState(() {}));
+
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 350),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController.forward();
   }
 
   @override
@@ -65,44 +77,49 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
     _titleController.dispose();
     _contentController.dispose();
     _tagController.dispose();
+    _animController.dispose();
+    _titleFocus.dispose();
+    _contentFocus.dispose();
     super.dispose();
   }
 
-  bool get _isDarkNote {
-    return Color(_selectedColor).computeLuminance() < 0.5;
-  }
+  Color get _bgColor => Color(_selectedColor);
+  bool get _isDark => _bgColor.computeLuminance() < 0.5;
+  Color get _textColor => _isDark ? Colors.white : Colors.black87;
+  Color get _subtleColor => _isDark
+      ? Colors.white.withValues(alpha: 0.45)
+      : Colors.black.withValues(alpha: 0.38);
 
-  Color get _textColor => _isDarkNote ? Colors.white : Colors.black87;
+  bool get _canSave =>
+      _titleController.text.trim().isNotEmpty ||
+      _contentController.text.trim().isNotEmpty;
 
   void _saveNote() {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
-
     if (title.isEmpty && content.isEmpty) return;
 
     final noteProvider = Provider.of<NoteProvider>(context, listen: false);
 
     if (_isNewNote) {
-      final newNote = Note(
+      noteProvider.addNote(Note(
         id: const Uuid().v4(),
-        title: title.isEmpty ? 'Başlıksız' : title,
+        title: title.isEmpty ? 'Baslıksız' : title,
         content: content,
         date: DateTime.now(),
         color: _selectedColor,
         isPinned: _isPinned,
         tags: _tags,
-      );
-      noteProvider.addNote(newNote);
+      ));
     } else {
-      final updatedNote = widget.note!.copyWith(
-        title: title.isEmpty ? 'Başlıksız' : title,
+      noteProvider.updateNote(widget.note!.copyWith(
+        title: title.isEmpty ? 'Baslıksız' : title,
         content: content,
         date: DateTime.now(),
         color: _selectedColor,
         isPinned: _isPinned,
         tags: _tags,
-      );
-      noteProvider.updateNote(updatedNote);
+      ));
     }
     Navigator.pop(context);
   }
@@ -116,12 +133,18 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceDark,
-        title: const Text('Notu Sil'),
-        content: const Text('Bu notu silmek istediğinizden emin misiniz?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Notu Sil',
+            style: TextStyle(color: AppTheme.textLight)),
+        content: const Text(
+          'Bu notu silmek istediginizden emin misiniz?',
+          style: TextStyle(color: AppTheme.textDim),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+            child: const Text('Iptal',
+                style: TextStyle(color: AppTheme.textDim)),
           ),
           TextButton(
             onPressed: () {
@@ -130,8 +153,8 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
                   .deleteNote(widget.note!.id);
               Navigator.pop(context);
             },
-            child:
-                const Text('Sil', style: TextStyle(color: Colors.red)),
+            child: const Text('Sil',
+                style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -148,241 +171,546 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
     }
   }
 
-  void _removeTag(String tag) {
-    setState(() => _tags.remove(tag));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool canSave = _titleController.text.trim().isNotEmpty ||
-        _contentController.text.trim().isNotEmpty;
-
-    return Scaffold(
-      backgroundColor: Color(_selectedColor),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: _textColor),
-        title: Text(
-          _isNewNote ? 'Yeni Not' : 'Notu Düzenle',
-          style: TextStyle(color: _textColor, fontSize: 16),
-        ),
-        actions: [
-          // Pin button
-          IconButton(
-            icon: Icon(
-              _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-              color: _isPinned ? Colors.amber : _textColor,
-            ),
-            onPressed: () => setState(() => _isPinned = !_isPinned),
-            tooltip: _isPinned ? 'Sabiti Kaldır' : 'Sabitle',
-          ),
-          // Color palette
-          IconButton(
-            icon: Icon(Icons.palette_outlined, color: _textColor),
-            onPressed: () => _showColorPicker(),
-          ),
-          // Delete
-          if (!_isNewNote)
-            IconButton(
-              icon: Icon(Icons.delete_outline, color: _textColor),
-              onPressed: _deleteConfirmation,
-            ),
-          // Save
-          IconButton(
-            icon: Icon(Icons.check,
-                color: canSave
-                    ? _textColor
-                    : _textColor.withValues(alpha: 0.3)),
-            onPressed: canSave ? _saveNote : null,
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            // Title
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: 'Başlık',
-                border: InputBorder.none,
-                fillColor: Colors.transparent,
-                hintStyle: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: _textColor.withValues(alpha: 0.4)),
-              ),
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: _textColor),
-            ),
-            // Content
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                decoration: InputDecoration(
-                  hintText: 'Notunuzu buraya yazın...',
-                  border: InputBorder.none,
-                  fillColor: Colors.transparent,
-                  hintStyle: TextStyle(
-                      fontSize: 16,
-                      color: _textColor.withValues(alpha: 0.4)),
-                ),
-                style: TextStyle(fontSize: 16, color: _textColor, height: 1.5),
-                maxLines: null,
-                expands: true,
-              ),
-            ),
-            // Tag section
-            _buildTagSection(),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTagSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Existing tags
-        if (_tags.isNotEmpty)
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _tags.map((tag) {
-              return GestureDetector(
-                onTap: () => _removeTag(tag),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _textColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: _textColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('#$tag',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: _textColor.withValues(alpha: 0.9))),
-                      const SizedBox(width: 4),
-                      Icon(Icons.close,
-                          size: 12,
-                          color: _textColor.withValues(alpha: 0.6)),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        const SizedBox(height: 8),
-        // Add tag field
-        Row(
-          children: [
-            Icon(Icons.label_outline,
-                size: 18, color: _textColor.withValues(alpha: 0.5)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _tagController,
-                decoration: InputDecoration(
-                  hintText: 'Etiket ekle...',
-                  border: InputBorder.none,
-                  fillColor: Colors.transparent,
-                  isDense: true,
-                  hintStyle: TextStyle(
-                      fontSize: 13,
-                      color: _textColor.withValues(alpha: 0.4)),
-                ),
-                style: TextStyle(fontSize: 13, color: _textColor),
-                onSubmitted: (_) => _addTag(),
-              ),
-            ),
-            GestureDetector(
-              onTap: _addTag,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: _textColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.add,
-                    size: 16, color: _textColor.withValues(alpha: 0.7)),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  void _removeTag(String tag) => setState(() => _tags.remove(tag));
 
   void _showColorPicker() {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surfaceDark,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => _ColorPickerSheet(
+        selectedColor: _selectedColor,
+        onSelected: (color) {
+          setState(() => _selectedColor = color);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: Scaffold(
+        backgroundColor: _bgColor,
+        body: SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Renk Seç',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textLight)),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: kNoteColors.length,
-                itemBuilder: (context, index) {
-                  final color = kNoteColors[index];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedColor = color);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Color(color),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _selectedColor == color
-                              ? AppTheme.primaryColor
-                              : Colors.grey.shade600,
-                          width: _selectedColor == color ? 3 : 1,
+              // ── Top Bar ────────────────────────────────────────────
+              _TopBar(
+                isNewNote: _isNewNote,
+                isPinned: _isPinned,
+                canSave: _canSave,
+                textColor: _textColor,
+                subtleColor: _subtleColor,
+                onBack: () => Navigator.pop(context),
+                onPin: () => setState(() => _isPinned = !_isPinned),
+                onColorPicker: _showColorPicker,
+                onDelete: !_isNewNote ? _deleteConfirmation : null,
+                onSave: _canSave ? _saveNote : null,
+              ),
+
+              // ── Writing Area ────────────────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title Field
+                      TextField(
+                        controller: _titleController,
+                        focusNode: _titleFocus,
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) =>
+                            FocusScope.of(context).requestFocus(_contentFocus),
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: _textColor,
+                          height: 1.3,
                         ),
+                        decoration: InputDecoration(
+                          hintText: 'Baslik...',
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: _subtleColor,
+                          ),
+                        ),
+                        maxLines: null,
                       ),
-                      child: _selectedColor == color
-                          ? const Icon(Icons.check,
-                              color: Colors.white, size: 16)
-                          : null,
-                    ),
-                  );
-                },
+
+                      // Divider
+                      Divider(
+                        color: _textColor.withValues(alpha: 0.12),
+                        height: 16,
+                      ),
+
+                      // Content Field
+                      TextField(
+                        controller: _contentController,
+                        focusNode: _contentFocus,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _textColor,
+                          height: 1.65,
+                          letterSpacing: 0.1,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Notunuzu buraya yazin...',
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(
+                            fontSize: 16,
+                            color: _subtleColor,
+                            height: 1.65,
+                          ),
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Tags Section
+                      _TagsSection(
+                        tags: _tags,
+                        textColor: _textColor,
+                        subtleColor: _subtleColor,
+                        tagController: _tagController,
+                        onAddTag: _addTag,
+                        onRemoveTag: _removeTag,
+                      ),
+
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
-        );
-      },
+        ),
+
+        // ── Bottom Toolbar ──────────────────────────────────────────
+        bottomNavigationBar: _BottomToolbar(
+          bgColor: _bgColor,
+          textColor: _textColor,
+          subtleColor: _subtleColor,
+          isPinned: _isPinned,
+          wordCount: _contentController.text.trim().isEmpty
+              ? 0
+              : _contentController.text.trim().split(RegExp(r'\s+')).length,
+          charCount: _contentController.text.length,
+          onColorPicker: _showColorPicker,
+          onPin: () => setState(() => _isPinned = !_isPinned),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TopBar extends StatelessWidget {
+  final bool isNewNote;
+  final bool isPinned;
+  final bool canSave;
+  final Color textColor;
+  final Color subtleColor;
+  final VoidCallback onBack;
+  final VoidCallback onPin;
+  final VoidCallback onColorPicker;
+  final VoidCallback? onDelete;
+  final VoidCallback? onSave;
+
+  const _TopBar({
+    required this.isNewNote,
+    required this.isPinned,
+    required this.canSave,
+    required this.textColor,
+    required this.subtleColor,
+    required this.onBack,
+    required this.onPin,
+    required this.onColorPicker,
+    this.onDelete,
+    this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+      child: Row(
+        children: [
+          // Back
+          _IconBtn(
+            icon: Icons.arrow_back_ios_new_rounded,
+            color: textColor,
+            onTap: onBack,
+            tooltip: 'Geri',
+          ),
+          const Spacer(),
+          // Pin
+          _IconBtn(
+            icon: isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+            color: isPinned ? Colors.amber : textColor,
+            onTap: onPin,
+            tooltip: isPinned ? 'Sabiti Kaldir' : 'Sabitle',
+          ),
+          // Color
+          _IconBtn(
+            icon: Icons.palette_outlined,
+            color: textColor,
+            onTap: onColorPicker,
+            tooltip: 'Renk Sec',
+          ),
+          // Delete
+          if (onDelete != null)
+            _IconBtn(
+              icon: Icons.delete_outline_rounded,
+              color: textColor,
+              onTap: onDelete!,
+              tooltip: 'Sil',
+            ),
+          // Save
+          AnimatedOpacity(
+            opacity: canSave ? 1.0 : 0.35,
+            duration: const Duration(milliseconds: 200),
+            child: GestureDetector(
+              onTap: onSave,
+              child: Container(
+                margin: const EdgeInsets.only(left: 4, right: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: textColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_rounded, size: 16, color: textColor),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Kaydet',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _IconBtn({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(40),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, color: color, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+class _TagsSection extends StatelessWidget {
+  final List<String> tags;
+  final Color textColor;
+  final Color subtleColor;
+  final TextEditingController tagController;
+  final VoidCallback onAddTag;
+  final void Function(String) onRemoveTag;
+
+  const _TagsSection({
+    required this.tags,
+    required this.textColor,
+    required this.subtleColor,
+    required this.tagController,
+    required this.onAddTag,
+    required this.onRemoveTag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Existing tags
+        if (tags.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: tags.map((tag) {
+              return GestureDetector(
+                onTap: () => onRemoveTag(tag),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: textColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: textColor.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.label_outline, size: 12, color: subtleColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        '#$tag',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: textColor.withValues(alpha: 0.85),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Icon(Icons.close_rounded, size: 12, color: subtleColor),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+        const SizedBox(height: 10),
+
+        // Add tag field
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: textColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.label_outline, size: 16, color: subtleColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: tagController,
+                  style: TextStyle(fontSize: 13, color: textColor),
+                  decoration: InputDecoration(
+                    hintText: 'Etiket ekle...',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    hintStyle: TextStyle(fontSize: 13, color: subtleColor),
+                  ),
+                  onSubmitted: (_) => onAddTag(),
+                  textInputAction: TextInputAction.done,
+                ),
+              ),
+              GestureDetector(
+                onTap: onAddTag,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: textColor.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.add, size: 14, color: textColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BottomToolbar extends StatelessWidget {
+  final Color bgColor;
+  final Color textColor;
+  final Color subtleColor;
+  final bool isPinned;
+  final int wordCount;
+  final int charCount;
+  final VoidCallback onColorPicker;
+  final VoidCallback onPin;
+
+  const _BottomToolbar({
+    required this.bgColor,
+    required this.textColor,
+    required this.subtleColor,
+    required this.isPinned,
+    required this.wordCount,
+    required this.charCount,
+    required this.onColorPicker,
+    required this.onPin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = bgColor.computeLuminance() < 0.5;
+    final toolbarBg = isDark
+        ? Colors.black.withValues(alpha: 0.25)
+        : Colors.black.withValues(alpha: 0.07);
+
+    return Container(
+      color: bgColor,
+      child: SafeArea(
+        top: false,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: toolbarBg,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              // Word / Char count
+              Icon(Icons.format_size, size: 14, color: subtleColor),
+              const SizedBox(width: 6),
+              Text(
+                '$wordCount kelime · $charCount karakter',
+                style: TextStyle(fontSize: 12, color: subtleColor),
+              ),
+              const Spacer(),
+              // Color swatch
+              GestureDetector(
+                onTap: onColorPicker,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: textColor.withValues(alpha: 0.4), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Pin toggle
+              GestureDetector(
+                onTap: onPin,
+                child: Icon(
+                  isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                  size: 20,
+                  color: isPinned ? Colors.amber : subtleColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorPickerSheet extends StatelessWidget {
+  final int selectedColor;
+  final void Function(int) onSelected;
+
+  const _ColorPickerSheet({
+    required this.selectedColor,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Arkaplan Rengi',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textLight,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: kNoteColors.length,
+            itemBuilder: (context, index) {
+              final color = kNoteColors[index];
+              final isSelected = selectedColor == color;
+              return GestureDetector(
+                onTap: () => onSelected(color),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  decoration: BoxDecoration(
+                    color: Color(color),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.1),
+                      width: isSelected ? 2.5 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Color(color).withValues(alpha: 0.5),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 18)
+                      : null,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }
