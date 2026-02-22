@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
 
 class FinanceSummaryCard extends StatelessWidget {
@@ -31,7 +30,8 @@ class FinanceSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.3),
+            color:
+                (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -59,10 +59,13 @@ class FinanceSummaryCard extends StatelessWidget {
                             color: Colors.greenAccent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Icon(Icons.arrow_upward, color: Colors.greenAccent, size: 16),
+                          child: const Icon(Icons.arrow_upward,
+                              color: Colors.greenAccent, size: 16),
                         ),
                         const SizedBox(width: 8),
-                        const Text('Gelir', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        const Text('Gelir',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12)),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -96,10 +99,13 @@ class FinanceSummaryCard extends StatelessWidget {
                               color: Colors.redAccent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Icon(Icons.arrow_downward, color: Colors.redAccent, size: 16),
+                            child: const Icon(Icons.arrow_downward,
+                                color: Colors.redAccent, size: 16),
                           ),
                           const SizedBox(width: 8),
-                          const Text('Gider', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const Text('Gider',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -128,7 +134,8 @@ class FinanceSummaryCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Net Durum', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                const Text('Net Durum',
+                    style: TextStyle(color: Colors.white70, fontSize: 13)),
                 Row(
                   children: [
                     Icon(
@@ -140,7 +147,8 @@ class FinanceSummaryCard extends StatelessWidget {
                     Text(
                       Formatters.formatMoney(net.abs()),
                       style: TextStyle(
-                        color: isPositive ? Colors.greenAccent : Colors.redAccent,
+                        color:
+                            isPositive ? Colors.greenAccent : Colors.redAccent,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),

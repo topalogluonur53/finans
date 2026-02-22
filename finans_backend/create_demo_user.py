@@ -18,7 +18,7 @@ def create_demo_user():
     """Demo kullanıcısını oluştur veya güncelle"""
     username = 'demo'
     email = 'demo@finans.app'
-    password = 'demo123'
+    password = '123456'
     
     # Kullanıcı zaten var mı kontrol et
     if User.objects.filter(username=username).exists():

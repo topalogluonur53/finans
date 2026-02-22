@@ -1,24 +1,33 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:finans_app/data/services/market_api_service.dart';
+import 'package:finans_app/data/models/market_price.dart';
 
 class MarketData {
   final String symbol;
   final String name;
   final double price;
   final double changePercent;
+  final double? dayHigh;
+  final double? dayLow;
+  final double? openPrice;
   final String category;
   final bool isIndex;
   final String? parentSymbol;
+  final String? imageUrl;
 
   MarketData({
-    required this.symbol, 
+    required this.symbol,
     required String name,
-    required this.price, 
-    required this.changePercent, 
+    required this.price,
+    required this.changePercent,
+    this.dayHigh,
+    this.dayLow,
+    this.openPrice,
     required this.category,
     this.isIndex = false,
     this.parentSymbol,
+    this.imageUrl,
   }) : name = _prettyNames[symbol.toUpperCase()] ?? name;
 
   static const Map<String, String> _prettyNames = {
@@ -36,6 +45,7 @@ class MarketData {
     'GBPUSD=X': 'Sterlin/Dolar',
     'GBPTRY=X': 'Sterlin/TL',
     'JPYTRY=X': 'Yen/TL',
+    'CHFTRY=X': 'İsviçre Frangı/TL',
     'XU100.IS': 'BIST 100',
     '^GSPC': 'S&P 500',
     '^IXIC': 'NASDAQ',
@@ -51,6 +61,16 @@ class MarketData {
     'TAM-ALTIN': 'Tam Altın',
     'CUMHURIYET-ALTIN': 'Cumhuriyet Altını',
     '22-AYAR-BILEZIK': '22 Ayar Bilezik (gr)',
+    'BTCUSDT': 'Bitcoin',
+    'ETHUSDT': 'Ethereum',
+    'BNBUSDT': 'Binance Coin',
+    'SOLUSDT': 'Solana',
+    'XRPUSDT': 'Ripple',
+    'ADAUSDT': 'Cardano',
+    'DOGEUSDT': 'Dogecoin',
+    'AVAXUSDT': 'Avalanche',
+    'DOTUSDT': 'Polkadot',
+    'LINKUSDT': 'Chainlink',
   };
 }
 
@@ -58,13 +78,15 @@ class MarketProvider extends ChangeNotifier {
   List<MarketData> _prices = [];
   bool _isLoading = false;
   Timer? _timer;
-  double _usdTryRate = 32.50; 
-  List<String> _favorites = ['BTC', 'USD/TRY', 'AU/TRY'];
+  double _usdTryRate = 32.50;
+  final List<String> _favorites = ['BTCUSDT', 'USDTRY=X', 'GRAM-ALTIN'];
+  DateTime? _lastUpdated;
 
   List<MarketData> get prices => _prices;
   bool get isLoading => _isLoading;
   double get usdTryRate => _usdTryRate;
   List<String> get favorites => _favorites;
+  DateTime? get lastUpdated => _lastUpdated;
 
   void toggleFavorite(String symbol) {
     if (_favorites.contains(symbol)) {
@@ -77,6 +99,16 @@ class MarketProvider extends ChangeNotifier {
 
   bool isFavorite(String symbol) => _favorites.contains(symbol);
 
+  List<MarketData> searchPrices(String query) {
+    if (query.isEmpty) return _prices;
+    final q = query.toLowerCase();
+    return _prices
+        .where((p) =>
+            p.name.toLowerCase().contains(q) ||
+            p.symbol.toLowerCase().contains(q))
+        .toList();
+  }
+
   void startPolling() {
     _fetchPrices();
     _timer = Timer.periodic(const Duration(seconds: 60), (timer) {
@@ -88,41 +120,83 @@ class MarketProvider extends ChangeNotifier {
     _timer?.cancel();
   }
 
+  Future<void> refreshManual() => _fetchPrices();
+
   final MarketApiService _service = MarketApiService();
 
   Future<void> _fetchPrices({bool isBackground = false}) async {
-    if (_isLoading && !isBackground) return; 
-    
+    debugPrint('DEBUG: _fetchPrices started');
+    if (_isLoading && !isBackground) return;
+
     if (!isBackground) {
       _isLoading = true;
       notifyListeners();
     }
-    
+
     try {
-      final data = await _service.fetchCategorizedMarkets();
+      final categorizedFuture =
+          _service.fetchCategorizedMarkets().catchError((e) {
+        debugPrint('Categorized Markets Error: $e');
+        return <String, List<MarketPrice>>{};
+      });
+
+      final binanceFuture = _service.fetchBinancePrices().catchError((e) {
+        debugPrint('Binance API Error: $e');
+        return <MarketPrice>[];
+      });
+
+      final results = await Future.wait([categorizedFuture, binanceFuture]);
+
+      final Map<String, List<MarketPrice>> categorizedData =
+          results[0] as Map<String, List<MarketPrice>>;
+      final List<MarketPrice> binanceData = results[1] as List<MarketPrice>;
+
       List<MarketData> allPrices = [];
-      
-      data.forEach((category, prices) {
+
+      categorizedData.forEach((category, prices) {
         for (var p in prices) {
           allPrices.add(MarketData(
             symbol: p.symbol,
             name: p.name,
             price: p.currentPrice,
             changePercent: p.priceChangePercentage24h,
+            dayHigh: p.dayHigh,
+            dayLow: p.dayLow,
+            openPrice: p.openPrice,
             category: category,
             isIndex: p.isIndex,
             parentSymbol: p.parentSymbol,
+            imageUrl: p.imageUrl,
           ));
-          
-          if (p.symbol == 'USD/TRY' || p.symbol == 'USDTRY=X') {
-             _usdTryRate = p.currentPrice;
+
+          if (p.symbol == 'USDTRY=X') {
+            _usdTryRate = p.currentPrice;
           }
         }
       });
 
-      _prices = allPrices;
-    } catch (e) {
-      print('Error fetching prices from backend: $e');
+      for (var p in binanceData) {
+        if (!allPrices.any((existing) => existing.symbol == p.symbol)) {
+          allPrices.add(MarketData(
+            symbol: p.symbol,
+            name: p.name,
+            price: p.currentPrice,
+            changePercent: p.priceChangePercentage24h,
+            dayHigh: p.dayHigh,
+            dayLow: p.dayLow,
+            category: 'crypto',
+            imageUrl: p.imageUrl,
+          ));
+        }
+      }
+
+      if (allPrices.isNotEmpty) {
+        _prices = allPrices;
+        _lastUpdated = DateTime.now();
+      }
+    } catch (e, stack) {
+      debugPrint('General Error in _fetchPrices: $e');
+      debugPrint(stack.toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -133,8 +207,7 @@ class MarketProvider extends ChangeNotifier {
     if (symbol.isEmpty) return 0.0;
     final search = symbol.toUpperCase();
     try {
-      final data = _prices.firstWhere((p) => p.symbol.toUpperCase() == search);
-      return data.price;
+      return _prices.firstWhere((p) => p.symbol.toUpperCase() == search).price;
     } catch (_) {
       return 0.0;
     }

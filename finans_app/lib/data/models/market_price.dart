@@ -11,7 +11,8 @@ class MarketPrice {
   final int? volume;
   final bool isIndex;
   final String? parentSymbol;
-  final String category; // 'commodity', 'stock', 'currency'
+  final String category; // 'commodity', 'stock', 'currency', 'crypto'
+  final String? imageUrl;
 
   MarketPrice({
     required this.id,
@@ -27,6 +28,7 @@ class MarketPrice {
     this.isIndex = false,
     this.parentSymbol,
     required this.category,
+    this.imageUrl,
   });
 
   static const Map<String, String> _prettyNames = {
@@ -64,26 +66,56 @@ class MarketPrice {
   factory MarketPrice.fromJson(Map<String, dynamic> json, String category) {
     final symbol = json['symbol']?.toString() ?? '';
     String name = json['name']?.toString() ?? '';
-    
+
     // If name is empty, null, or same as symbol, try to find a pretty name
     if (name.isEmpty || name == 'null' || name == symbol) {
-      name = _prettyNames[symbol.toUpperCase()] ?? (name == 'null' || name.isEmpty ? symbol : name);
+      name = _prettyNames[symbol.toUpperCase()] ??
+          (name == 'null' || name.isEmpty ? symbol : name);
     }
 
     return MarketPrice(
-      id: json['id'].toString(),
+      id: json['id']?.toString() ?? symbol,
       symbol: symbol,
       name: name,
-      currentPrice: double.parse(json['price'].toString()),
-      priceChange24h: double.parse(json['price_change_24h']?.toString() ?? '0'),
-      priceChangePercentage24h: double.parse(json['change_percent_24h']?.toString() ?? '0'),
-      openPrice: json['open_price'] != null ? double.parse(json['open_price'].toString()) : null,
-      dayHigh: json['day_high'] != null ? double.parse(json['day_high'].toString()) : null,
-      dayLow: json['day_low'] != null ? double.parse(json['day_low'].toString()) : null,
-      volume: json['volume'] != null ? int.parse(json['volume'].toString()) : null,
+      currentPrice: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      priceChange24h:
+          double.tryParse(json['price_change_24h']?.toString() ?? '0') ?? 0.0,
+      priceChangePercentage24h:
+          double.tryParse(json['change_percent_24h']?.toString() ?? '0') ?? 0.0,
+      openPrice: json['open_price'] != null
+          ? double.tryParse(json['open_price'].toString())
+          : null,
+      dayHigh: json['day_high'] != null
+          ? double.tryParse(json['day_high'].toString())
+          : null,
+      dayLow: json['day_low'] != null
+          ? double.tryParse(json['day_low'].toString())
+          : null,
+      volume: json['volume'] != null
+          ? int.tryParse(json['volume'].toString())
+          : null,
       isIndex: json['is_index'] == true,
       parentSymbol: json['parent_symbol'],
       category: category,
+      imageUrl: json['image_url'],
+    );
+  }
+
+  factory MarketPrice.fromCoinGecko(
+      Map<String, dynamic> json, String category) {
+    return MarketPrice(
+      id: json['id']?.toString() ?? '',
+      symbol: (json['symbol']?.toString() ?? '').toUpperCase(),
+      name: json['name']?.toString() ?? '',
+      currentPrice: (json['current_price'] as num?)?.toDouble() ?? 0.0,
+      priceChange24h: (json['price_change_24h'] as num?)?.toDouble() ?? 0.0,
+      priceChangePercentage24h:
+          (json['price_change_percentage_24h'] as num?)?.toDouble() ?? 0.0,
+      dayHigh: (json['high_24h'] as num?)?.toDouble(),
+      dayLow: (json['low_24h'] as num?)?.toDouble(),
+      volume: (json['total_volume'] as num?)?.toInt(),
+      category: category,
+      imageUrl: json['image']?.toString(),
     );
   }
 

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:finans_app/data/models/market_price.dart';
 
 class CoinGeckoService {
   static const String _baseUrlValue = 'https://api.coingecko.com/api/v3';
-  
+
   static final Map<String, dynamic> _cache = {};
   static final Map<String, DateTime> _cacheTime = {};
   static const Duration _cacheDuration = Duration(minutes: 1);
@@ -27,9 +28,12 @@ class CoinGeckoService {
     if (_isCacheValid(cacheKey)) return _cache[cacheKey];
 
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrlValue/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(
+                '$_baseUrlValue/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -37,14 +41,14 @@ class CoinGeckoService {
             .where((item) => item != null)
             .map((item) => MarketPrice.fromCoinGecko(item, 'crypto'))
             .toList();
-        
+
         _updateCache(cacheKey, result);
         return result;
       }
       if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
       return [];
     } catch (e) {
-      print('Error fetching crypto prices: $e');
+      debugPrint('Error fetching crypto prices: $e');
       return _cache[cacheKey] ?? [];
     }
   }
@@ -53,7 +57,7 @@ class CoinGeckoService {
     const cacheKey = 'commodity_prices';
     if (_isCacheValid(cacheKey)) return _cache[cacheKey];
 
-    double tryRate = 43.75; 
+    double tryRate = 43.75;
     double ounceGold = 2750.0;
     double ounceSilver = 32.50;
     double goldChangePercent = 0.45;
@@ -61,7 +65,9 @@ class CoinGeckoService {
 
     try {
       try {
-        final fxResponse = await http.get(Uri.parse('https://api.exchangerate-api.com/v4/latest/USD')).timeout(const Duration(seconds: 5));
+        final fxResponse = await http
+            .get(Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'))
+            .timeout(const Duration(seconds: 5));
         if (fxResponse.statusCode == 200) {
           final fxData = json.decode(fxResponse.body);
           if (fxData['rates'] != null && fxData['rates']['TRY'] != null) {
@@ -69,33 +75,41 @@ class CoinGeckoService {
           }
         }
       } catch (e) {
-        print('FX Rate fetch error: $e');
+        debugPrint('FX Rate fetch error: $e');
       }
 
       try {
-        final response = await http.get(
-          Uri.parse('$_baseUrlValue/coins/markets?vs_currency=usd&ids=pax-gold,silver-tokenized-stock-defichain&sparkline=false'),
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .get(
+              Uri.parse(
+                  '$_baseUrlValue/coins/markets?vs_currency=usd&ids=pax-gold,silver-tokenized-stock-defichain&sparkline=false'),
+            )
+            .timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final List<dynamic> data = json.decode(response.body);
-          final goldData = data.firstWhere((e) => e['id'] == 'pax-gold', orElse: () => null);
-          final silverData = data.firstWhere((e) => e['id'] == 'silver-tokenized-stock-defichain', orElse: () => null);
+          final goldData =
+              data.firstWhere((e) => e['id'] == 'pax-gold', orElse: () => null);
+          final silverData = data.firstWhere(
+              (e) => e['id'] == 'silver-tokenized-stock-defichain',
+              orElse: () => null);
 
           if (goldData != null) {
             ounceGold = (goldData['current_price'] ?? 2750.0).toDouble();
-            goldChangePercent = (goldData['price_change_percentage_24h'] ?? 0.45).toDouble();
+            goldChangePercent =
+                (goldData['price_change_percentage_24h'] ?? 0.45).toDouble();
           }
           if (silverData != null) {
             ounceSilver = (silverData['current_price'] ?? 32.50).toDouble();
-            silverChangePercent = (silverData['price_change_percentage_24h'] ?? -0.12).toDouble();
+            silverChangePercent =
+                (silverData['price_change_percentage_24h'] ?? -0.12).toDouble();
           }
         }
       } catch (e) {
-        print('CoinGecko fetch error: $e');
+        debugPrint('CoinGecko fetch error: $e');
       }
     } catch (e) {
-      print('Commodity logic error: $e');
+      debugPrint('Commodity logic error: $e');
     }
 
     final double gramGold = (ounceGold / 31.1034) * tryRate;
@@ -157,7 +171,7 @@ class CoinGeckoService {
         category: 'commodity',
       ),
     ];
-    
+
     _updateCache(cacheKey, result);
     return result;
   }
@@ -167,9 +181,11 @@ class CoinGeckoService {
     if (_isCacheValid(cacheKey)) return _cache[cacheKey];
 
     try {
-      final response = await http.get(
-        Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -232,31 +248,71 @@ class CoinGeckoService {
       }
       return _cache[cacheKey] ?? [];
     } catch (e) {
-      print('Error fetching currency rates: $e');
+      debugPrint('Error fetching currency rates: $e');
       return _cache[cacheKey] ?? [];
     }
   }
 
   Future<List<MarketPrice>> fetchStockPrices() async {
     final stocks = [
-      {'id': 'bist100', 'symbol': 'XU100', 'name': 'BIST 100', 'price': 14442.35},
-      {'id': 'thyao', 'symbol': 'THYAO', 'name': 'Türk Hava Yolları', 'price': 342.50},
-      {'id': 'garan', 'symbol': 'GARAN', 'name': 'Garanti Bankası', 'price': 118.30},
+      {
+        'id': 'bist100',
+        'symbol': 'XU100',
+        'name': 'BIST 100',
+        'price': 14442.35
+      },
+      {
+        'id': 'thyao',
+        'symbol': 'THYAO',
+        'name': 'Türk Hava Yolları',
+        'price': 342.50
+      },
+      {
+        'id': 'garan',
+        'symbol': 'GARAN',
+        'name': 'Garanti Bankası',
+        'price': 118.30
+      },
       {'id': 'eregl', 'symbol': 'EREGL', 'name': 'Erdemir', 'price': 52.10},
       {'id': 'asels', 'symbol': 'ASELS', 'name': 'Aselsan', 'price': 78.75},
       {'id': 'sise', 'symbol': 'SISE', 'name': 'Şişecam', 'price': 58.20},
       {'id': 'tupRS', 'symbol': 'TUPRS', 'name': 'Tüpraş', 'price': 185.40},
-      {'id': 'kchol', 'symbol': 'KCHOL', 'name': 'Koç Holding', 'price': 245.80},
-      {'id': 'bimas', 'symbol': 'BIMAS', 'name': 'BİM Birleşik Mağazalar', 'price': 485.00},
-      {'id': 'isCTR', 'symbol': 'ISCTR', 'name': 'İş Bankası (C)', 'price': 15.40},
+      {
+        'id': 'kchol',
+        'symbol': 'KCHOL',
+        'name': 'Koç Holding',
+        'price': 245.80
+      },
+      {
+        'id': 'bimas',
+        'symbol': 'BIMAS',
+        'name': 'BİM Birleşik Mağazalar',
+        'price': 485.00
+      },
+      {
+        'id': 'isCTR',
+        'symbol': 'ISCTR',
+        'name': 'İş Bankası (C)',
+        'price': 15.40
+      },
       {'id': 'akbnk', 'symbol': 'AKBNK', 'name': 'Akbank', 'price': 65.20},
-      {'id': 'sahol', 'symbol': 'SAHOL', 'name': 'Sabancı Holding', 'price': 98.40},
-      {'id': 'froto', 'symbol': 'FROTO', 'name': 'Ford Otosan', 'price': 1250.00},
+      {
+        'id': 'sahol',
+        'symbol': 'SAHOL',
+        'name': 'Sabancı Holding',
+        'price': 98.40
+      },
+      {
+        'id': 'froto',
+        'symbol': 'FROTO',
+        'name': 'Ford Otosan',
+        'price': 1250.00
+      },
     ];
 
     final random = Random();
     return stocks.map((s) {
-      final changePercent = (random.nextDouble() * 3) - 1.2; 
+      final changePercent = (random.nextDouble() * 3) - 1.2;
       final currentPrice = (s['price'] as double);
       return MarketPrice(
         id: s['id'] as String,
@@ -272,8 +328,10 @@ class CoinGeckoService {
 
   Future<Map<String, List<MarketPrice>>> fetchAllMarkets() async {
     final cryptoFuture = fetchCryptoPrices().catchError((_) => <MarketPrice>[]);
-    final commodityFuture = fetchCommodityPrices().catchError((_) => <MarketPrice>[]);
-    final currencyFuture = fetchCurrencyRates().catchError((_) => <MarketPrice>[]);
+    final commodityFuture =
+        fetchCommodityPrices().catchError((_) => <MarketPrice>[]);
+    final currencyFuture =
+        fetchCurrencyRates().catchError((_) => <MarketPrice>[]);
     final stockFuture = fetchStockPrices().catchError((_) => <MarketPrice>[]);
 
     final results = await Future.wait([

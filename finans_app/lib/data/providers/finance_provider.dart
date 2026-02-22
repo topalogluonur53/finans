@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +33,7 @@ class FinanceProvider extends ChangeNotifier {
     if (_token == null) return;
     _isLoading = true;
     notifyListeners();
-    
+
     await Future.wait([
       fetchIncomes(),
       fetchExpenses(),
@@ -47,7 +46,7 @@ class FinanceProvider extends ChangeNotifier {
   Future<void> fetchIncomes() async {
     try {
       final response = await http.get(
-        Uri.parse(ApiConstants.baseUrl + ApiConstants.incomesEndpoint),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.incomesEndpoint}'),
         headers: {'Authorization': 'Bearer $_token'},
       );
       if (response.statusCode == 200) {
@@ -55,14 +54,14 @@ class FinanceProvider extends ChangeNotifier {
         _incomes = data.map((e) => Income.fromJson(e)).toList();
       }
     } catch (e) {
-      print('Error fetching incomes: $e');
+      debugPrint('Error fetching incomes: $e');
     }
   }
 
   Future<void> fetchExpenses() async {
     try {
       final response = await http.get(
-        Uri.parse(ApiConstants.baseUrl + ApiConstants.expensesEndpoint),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.expensesEndpoint}'),
         headers: {'Authorization': 'Bearer $_token'},
       );
       if (response.statusCode == 200) {
@@ -70,7 +69,7 @@ class FinanceProvider extends ChangeNotifier {
         _expenses = data.map((e) => Expense.fromJson(e)).toList();
       }
     } catch (e) {
-      print('Error fetching expenses: $e');
+      debugPrint('Error fetching expenses: $e');
     }
   }
 
@@ -81,7 +80,7 @@ class FinanceProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse(ApiConstants.baseUrl + ApiConstants.incomesEndpoint),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.incomesEndpoint}'),
         headers: {
           'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
@@ -95,7 +94,7 @@ class FinanceProvider extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Error adding income: $e');
+      debugPrint('Error adding income: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -110,7 +109,7 @@ class FinanceProvider extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse(ApiConstants.baseUrl + ApiConstants.expensesEndpoint),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.expensesEndpoint}'),
         headers: {
           'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
@@ -124,7 +123,7 @@ class FinanceProvider extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Error adding expense: $e');
+      debugPrint('Error adding expense: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -146,7 +145,7 @@ class FinanceProvider extends ChangeNotifier {
         return true;
       }
     } catch (e) {
-      print('Error deleting income: $e');
+      debugPrint('Error deleting income: $e');
     }
     return false;
   }
@@ -155,7 +154,8 @@ class FinanceProvider extends ChangeNotifier {
     if (_token == null) return false;
     try {
       final response = await http.delete(
-        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.expensesEndpoint}$id/'),
+        Uri.parse(
+            '${ApiConstants.baseUrl}${ApiConstants.expensesEndpoint}$id/'),
         headers: {'Authorization': 'Bearer $_token'},
       );
 
@@ -165,7 +165,7 @@ class FinanceProvider extends ChangeNotifier {
         return true;
       }
     } catch (e) {
-      print('Error deleting expense: $e');
+      debugPrint('Error deleting expense: $e');
     }
     return false;
   }

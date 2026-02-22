@@ -10,56 +10,58 @@ class ToolsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _ToolCard(
-            title: 'Halka Arz (IPO)',
-            icon: Icons.trending_up,
-            subtitle: 'Yaklaşan ve son halka arzlar',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const IPOScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _ToolCard(
-            title: 'Not Defteri',
-            icon: Icons.note_alt,
-            subtitle: 'Notlarınızı kaydedin',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotepadScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _ToolCard(
-            title: 'Kredi Hesaplama',
-            icon: Icons.calculate,
-            subtitle: 'Taksit ve faiz hesaplayın',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoanCalculatorScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _ToolCard(
-            title: 'Döviz Çevirici',
-            icon: Icons.currency_exchange,
-            subtitle: 'Anlık kur ile çevirin',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
-              );
-            },
-          ),
-          // More tools
+      padding: const EdgeInsets.all(16),
+      children: [
+        _ToolCard(
+          title: 'Halka Arz (IPO)',
+          icon: Icons.trending_up,
+          subtitle: 'Yaklaşan ve son halka arzlar',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const IPOScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _ToolCard(
+          title: 'Not Defteri',
+          icon: Icons.note_alt,
+          subtitle: 'Notlarınızı kaydedin',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotepadScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _ToolCard(
+          title: 'Kredi Hesaplama',
+          icon: Icons.calculate,
+          subtitle: 'Taksit ve faiz hesaplayın',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const LoanCalculatorScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _ToolCard(
+          title: 'Döviz Çevirici',
+          icon: Icons.currency_exchange,
+          subtitle: 'Anlık kur ile çevirin',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const CurrencyConverterScreen()),
+            );
+          },
+        ),
+        // More tools
       ],
     );
   }
@@ -71,7 +73,11 @@ class _ToolCard extends StatefulWidget {
   final VoidCallback onTap;
   final String? subtitle;
 
-  const _ToolCard({required this.title, required this.icon, required this.onTap, this.subtitle});
+  const _ToolCard(
+      {required this.title,
+      required this.icon,
+      required this.onTap,
+      this.subtitle});
 
   @override
   State<_ToolCard> createState() => _ToolCardState();
@@ -95,25 +101,17 @@ class _ToolCardState extends State<_ToolCard> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF2D2D44),
+            color: Theme.of(context).cardTheme.color ?? Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Theme.of(context).primaryColor.withOpacity(0.08),
+                blurRadius: 15,
+                offset: const Offset(0, 6),
               ),
             ],
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF2D2D44),
-                const Color(0xFF2D2D44).withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
             border: Border.all(
-              color: primaryColor.withOpacity(0.1),
+              color: Colors.grey.shade200,
             ),
           ),
           child: Row(
@@ -133,10 +131,10 @@ class _ToolCardState extends State<_ToolCard> {
                   children: [
                     Text(
                       widget.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).textTheme.bodyLarge?.color ?? const Color(0xFF1A1A2E),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -144,7 +142,7 @@ class _ToolCardState extends State<_ToolCard> {
                       widget.subtitle ?? 'Kullanmak için dokunun',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -153,7 +151,7 @@ class _ToolCardState extends State<_ToolCard> {
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.grey.shade400,
               ),
             ],
           ),

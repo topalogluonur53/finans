@@ -4,21 +4,21 @@ class ApiConstants {
   static String get baseUrl {
     if (kIsWeb) {
       final String host = Uri.base.host;
-      print('Detected host: $host'); // Debugging
+      debugPrint('Detected host: $host'); // Debugging
       final String origin = Uri.base.origin;
-      
+
       if (host == 'localhost' || host == '127.0.0.1') {
         // Local geliştirme: Doğrudan backend portuna bağlan
         return 'http://$host:2223/api';
       }
-      
+
       // Production: Sitenin kendi adresi üzerinden proxy kullan (SSL uyumlu)
       return '$origin/api';
     }
     // Mobil veya diğer fallback
     return 'https://finans.onurtopaloglu.uk/api';
   }
-  
+
   static const String loginEndpoint = '/auth/login/';
   static const String registerEndpoint = '/auth/register/';
   static const String refreshEndpoint = '/auth/refresh/';

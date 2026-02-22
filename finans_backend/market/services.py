@@ -37,7 +37,8 @@ def update_market_from_yahoo():
             'EURUSD=X': 'Euro/Dolar',
             'GBPUSD=X': 'Sterlin/Dolar',
             'GBPTRY=X': 'Sterlin/TL',
-            'JPYTRY=X': 'Yen/TL'
+            'JPYTRY=X': 'Yen/TL',
+            'CHFTRY=X': 'İsviçre Frangı/TL'
         }
     }
 
@@ -57,8 +58,8 @@ def update_market_from_yahoo():
     all_tickers_map = {}
     for m_type, symbols in market_config.items():
         for sym, name in symbols.items():
-            # Sadece endeksler ve türevleri olan emtialar için is_index=True
-            is_idx = (m_type == 'index') or (sym in ['GC=F', 'SI=F', 'PL=F', 'PA=F'])
+            # Sadece endeksler için is_index=True
+            is_idx = (m_type == 'index')
             all_tickers_map[sym] = (name, m_type, is_idx)
 
     for idx_sym, constituents in index_constituents.items():
@@ -151,6 +152,21 @@ def calculate_precious_metals_derivatives():
                     'market_type': 'commodity',
                     'parent_symbol': base_sym,
                     'change_percent_24h': base_data.change_percent_24h
+                }
+            )
+            
+        # Altın/Gümüş Rasyosu (Gold/Silver Ratio)
+        if silver_ons > Decimal('0'):
+            ratio = gold_ons / silver_ons
+            base_data_gold = MarketData.objects.get(symbol='GC=F')
+            MarketData.objects.update_or_create(
+                symbol='XAUXAG',
+                defaults={
+                    'name': 'Altın/Gümüş Rasyosu',
+                    'price': ratio.quantize(Decimal('0.0001')),
+                    'market_type': 'commodity',
+                    'parent_symbol': None,
+                    'change_percent_24h': base_data_gold.change_percent_24h # Just an approximation or keeping it
                 }
             )
             

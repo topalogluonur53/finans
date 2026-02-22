@@ -7,7 +7,6 @@ import 'package:finans_app/presentation/screens/portfolio/portfolio_screen.dart'
 import 'package:finans_app/presentation/screens/finance/finance_screen.dart';
 import 'package:finans_app/presentation/screens/market/market_screen.dart';
 import 'package:finans_app/presentation/screens/tools/tools_screen.dart';
-import 'package:finans_app/presentation/screens/settings/settings_screen.dart';
 import 'package:finans_app/data/providers/portfolio_provider.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
 import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart';
@@ -23,21 +22,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  
+
   // Flattened the list into a getter or inside build to access setState
   List<Widget> get _screens => [
-    DashboardView(
-      onNavigateToTab: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-    ),
-    const PortfolioScreen(),
-    const FinanceScreen(),
-    const MarketScreen(),
-    const ToolsScreen(),
-  ];
+        DashboardView(
+          onNavigateToTab: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
+        const PortfolioScreen(),
+        const FinanceScreen(),
+        const MarketScreen(),
+        const ToolsScreen(),
+      ];
 
   void _shareApp() {
     Share.share(
@@ -54,21 +53,24 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle()),
-        backgroundColor: AppTheme.surfaceDark,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-               // Handle refresh based on current screen
-               if (_currentIndex == 0) {
-                 Provider.of<PortfolioProvider>(context, listen: false).fetchAssets();
-                 Provider.of<FinanceProvider>(context, listen: false).fetchData();
-               } else if (_currentIndex == 1) {
-                 Provider.of<PortfolioProvider>(context, listen: false).fetchAssets();
-               } else if (_currentIndex == 2) {
-                 Provider.of<FinanceProvider>(context, listen: false).fetchData();
-               }
+              // Handle refresh based on current screen
+              if (_currentIndex == 0) {
+                Provider.of<PortfolioProvider>(context, listen: false)
+                    .fetchAssets();
+                Provider.of<FinanceProvider>(context, listen: false)
+                    .fetchData();
+              } else if (_currentIndex == 1) {
+                Provider.of<PortfolioProvider>(context, listen: false)
+                    .fetchAssets();
+              } else if (_currentIndex == 2) {
+                Provider.of<FinanceProvider>(context, listen: false)
+                    .fetchData();
+              }
             },
           ),
           IconButton(
@@ -83,16 +85,13 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Premium User Header
             Container(
-              padding: const EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppTheme.primaryColor.withValues(alpha: 0.8), AppTheme.secondaryColor.withValues(alpha: 0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+              padding: const EdgeInsets.only(
+                  top: 50, bottom: 20, left: 20, right: 20),
+              decoration: const BoxDecoration(
+                color: Color(0xFF002F6C), // İşBankası Laciverti
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(0),
+                  bottomRight: Radius.circular(0),
                 ),
               ),
               child: Row(
@@ -101,7 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     radius: 35,
                     backgroundColor: Colors.white,
                     child: Text(
-                      (authProvider.username ?? 'K').substring(0, 1).toUpperCase(),
+                      (authProvider.username ?? 'K')
+                          .substring(0, 1)
+                          .toUpperCase(),
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
@@ -137,9 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Menu Items with custom styling
             Expanded(
               child: ListView(
@@ -192,17 +193,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            
+
             // Logout Button at the bottom
             Padding(
               padding: const EdgeInsets.all(20),
               child: ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
                 tileColor: AppTheme.errorColor.withValues(alpha: 0.1),
                 leading: const Icon(Icons.logout, color: AppTheme.errorColor),
                 title: const Text(
                   'Çıkış Yap',
-                  style: TextStyle(color: AppTheme.errorColor, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: AppTheme.errorColor, fontWeight: FontWeight.bold),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -213,52 +216,108 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
       body: screens[_currentIndex],
       floatingActionButton: _buildFab(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.surfaceDark,
-        selectedItemColor: AppTheme.primaryColor,
-        unselectedItemColor: AppTheme.textDim,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Özet'),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Portföy'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Finans'),
-          BottomNavigationBarItem(icon: Icon(Icons.candlestick_chart), label: 'Piyasa'),
-          BottomNavigationBarItem(icon: Icon(Icons.build), label: 'Araçlar'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark,
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Özet'),
+                _buildNavItem(1, Icons.pie_chart_outline_rounded, Icons.pie_chart_rounded, 'Portföy'),
+                _buildNavItem(2, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Finans'),
+                _buildNavItem(3, Icons.candlestick_chart_outlined, Icons.candlestick_chart_rounded, 'Piyasa'),
+                _buildNavItem(4, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Araçlar'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData iconOutlined, IconData iconFilled, String label) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                isSelected ? iconFilled : iconOutlined,
+                key: ValueKey(isSelected),
+                color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget? _buildFab() {
-     switch (_currentIndex) {
-       case 1: // Portfolio
-         return FloatingActionButton(
-           onPressed: () {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const AddAssetScreen()),
-             );
-           },
-           child: const Icon(Icons.add),
-         );
-       case 2: // Finance
-         return FloatingActionButton(
-           onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => const TransactionTypeDialog(),
-              );
-           },
-           child: const Icon(Icons.add),
-         );
-       default:
-         return null;
-     }
+    switch (_currentIndex) {
+      case 1: // Portfolio
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddAssetScreen()),
+            );
+          },
+          child: const Icon(Icons.add),
+        );
+      case 2: // Finance
+        return FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (context) => const TransactionTypeDialog(),
+            );
+          },
+          child: const Icon(Icons.add),
+        );
+      default:
+        return null;
+    }
   }
 
   String _getTitle() {
@@ -284,11 +343,11 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.person, color: AppTheme.primaryColor),
-            const SizedBox(width: 10),
-            const Text(
+            Icon(Icons.person, color: AppTheme.primaryColor),
+            SizedBox(width: 10),
+            Text(
               'Profil Detayları',
               style: TextStyle(color: AppTheme.textLight),
             ),
@@ -301,17 +360,26 @@ class _HomeScreenState extends State<HomeScreen> {
             Center(
               child: CircleAvatar(
                 radius: 40,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                 child: Text(
                   (authProvider.username ?? 'K').substring(0, 1).toUpperCase(),
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor),
                 ),
               ),
             ),
             const SizedBox(height: 20),
             _buildInfoRow('Kullanıcı Adı', authProvider.username ?? '-'),
             const Divider(color: AppTheme.textDim, height: 20),
-            _buildInfoRow('Ad Soyad', '${authProvider.user?.firstName ?? ''} ${authProvider.user?.lastName ?? ''}'.trim().isEmpty ? '-' : '${authProvider.user?.firstName} ${authProvider.user?.lastName}'),
+            _buildInfoRow(
+                'Ad Soyad',
+                '${authProvider.user?.firstName ?? ''} ${authProvider.user?.lastName ?? ''}'
+                        .trim()
+                        .isEmpty
+                    ? '-'
+                    : '${authProvider.user?.firstName} ${authProvider.user?.lastName}'),
             const Divider(color: AppTheme.textDim, height: 20),
             _buildInfoRow('E-posta', authProvider.email ?? '-'),
           ],
@@ -319,13 +387,14 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+            child: const Text('Kapat',
+                style: TextStyle(
+                    color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildInfoRow(String label, String value) {
     return Column(
@@ -365,10 +434,11 @@ class _HomeScreenState extends State<HomeScreen> {
           fontWeight: FontWeight.w500,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, color: AppTheme.textDim, size: 20),
+      trailing:
+          const Icon(Icons.chevron_right, color: AppTheme.textDim, size: 20),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      hoverColor: AppTheme.primaryColor.withOpacity(0.1),
+      hoverColor: AppTheme.primaryColor.withValues(alpha: 0.1),
     );
   }
 
@@ -388,14 +458,16 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
+            child:
+                const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
           ),
           TextButton(
             onPressed: () {
               authProvider.logout();
               Navigator.pop(context);
             },
-            child: const Text('Çıkış Yap', style: TextStyle(color: AppTheme.errorColor)),
+            child: const Text('Çıkış Yap',
+                style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),
@@ -437,7 +509,8 @@ class TransactionTypeDialog extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AddTransactionScreen(type: TransactionType.income),
+                      builder: (context) => const AddTransactionScreen(
+                          type: TransactionType.income),
                     ),
                   );
                 },
@@ -451,7 +524,8 @@ class TransactionTypeDialog extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AddTransactionScreen(type: TransactionType.expense),
+                      builder: (context) => const AddTransactionScreen(
+                          type: TransactionType.expense),
                     ),
                   );
                 },

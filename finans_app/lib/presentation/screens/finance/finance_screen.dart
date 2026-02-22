@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
-import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
 import 'package:intl/intl.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -13,7 +12,8 @@ class FinanceScreen extends StatefulWidget {
   State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProviderStateMixin {
+class _FinanceScreenState extends State<FinanceScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -59,7 +59,8 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
         Expanded(
           child: Consumer<FinanceProvider>(
             builder: (context, finance, child) {
-              if (finance.isLoading && (finance.incomes.isEmpty && finance.expenses.isEmpty)) {
+              if (finance.isLoading &&
+                  (finance.incomes.isEmpty && finance.expenses.isEmpty)) {
                 return const Center(child: CircularProgressIndicator());
               }
 
@@ -110,10 +111,16 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Silme Onayı'),
-                  content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
+                  content:
+                      const Text('Bu işlemi silmek istediğinize emin misiniz?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
-                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sil', style: TextStyle(color: Colors.red))),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('İptal')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Sil',
+                            style: TextStyle(color: Colors.red))),
                   ],
                 ),
               );
@@ -121,7 +128,8 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
             onDismissed: (direction) {
               if (income.id != null) {
                 finance.deleteIncome(income.id!);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gelir silindi.')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Gelir silindi.')));
               }
             },
             child: ListTile(
@@ -133,15 +141,21 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(income.source, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(income.source,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
                         Text('Tutar: ${Formatters.formatMoney(income.amount)}'),
-                        Text('Tarih: ${DateFormat('dd.MM.yyyy').format(income.date)}'),
-                        if (income.description != null && income.description!.isNotEmpty)
-                           Padding(
-                             padding: const EdgeInsets.only(top: 8.0),
-                             child: Text('Açıklama: ${income.description}', style: const TextStyle(fontStyle: FontStyle.italic)),
-                           ),
+                        Text(
+                            'Tarih: ${DateFormat('dd.MM.yyyy').format(income.date)}'),
+                        if (income.description != null &&
+                            income.description!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text('Açıklama: ${income.description}',
+                                style: const TextStyle(
+                                    fontStyle: FontStyle.italic)),
+                          ),
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(context),
@@ -153,11 +167,15 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                 );
               },
               leading: const Icon(Icons.arrow_upward, color: Colors.green),
-              title: Text(income.source, style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(income.source,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(DateFormat('dd.MM.yyyy').format(income.date)),
               trailing: Text(
                 Formatters.formatMoney(income.amount),
-                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
               ),
             ),
           );
@@ -199,10 +217,16 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Silme Onayı'),
-                  content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
+                  content:
+                      const Text('Bu işlemi silmek istediğinize emin misiniz?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
-                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sil', style: TextStyle(color: Colors.red))),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('İptal')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Sil',
+                            style: TextStyle(color: Colors.red))),
                   ],
                 ),
               );
@@ -210,7 +234,8 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
             onDismissed: (direction) {
               if (expense.id != null) {
                 finance.deleteExpense(expense.id!);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gider silindi.')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Gider silindi.')));
               }
             },
             child: ListTile(
@@ -222,15 +247,22 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(expense.category, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(expense.category,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
-                        Text('Tutar: ${Formatters.formatMoney(expense.amount)}'),
-                        Text('Tarih: ${DateFormat('dd.MM.yyyy').format(expense.date)}'),
-                         if (expense.description != null && expense.description!.isNotEmpty)
-                           Padding(
-                             padding: const EdgeInsets.only(top: 8.0),
-                             child: Text('Açıklama: ${expense.description}', style: const TextStyle(fontStyle: FontStyle.italic)),
-                           ),
+                        Text(
+                            'Tutar: ${Formatters.formatMoney(expense.amount)}'),
+                        Text(
+                            'Tarih: ${DateFormat('dd.MM.yyyy').format(expense.date)}'),
+                        if (expense.description != null &&
+                            expense.description!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text('Açıklama: ${expense.description}',
+                                style: const TextStyle(
+                                    fontStyle: FontStyle.italic)),
+                          ),
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(context),
@@ -242,11 +274,15 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                 );
               },
               leading: const Icon(Icons.arrow_downward, color: Colors.red),
-              title: Text(expense.category, style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(expense.category,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(DateFormat('dd.MM.yyyy').format(expense.date)),
               trailing: Text(
                 Formatters.formatMoney(expense.amount),
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
               ),
             ),
           );
@@ -255,7 +291,8 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildSummaryHeader(String title, double amount, Color color, IconData icon) {
+  Widget _buildSummaryHeader(
+      String title, double amount, Color color, IconData icon) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -263,20 +300,20 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
-            color.withOpacity(0.2),
-            color.withOpacity(0.05),
+            color.withValues(alpha: 0.2),
+            color.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 28),
@@ -285,7 +322,9 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(color: color.withOpacity(0.8), fontSize: 13)),
+              Text(title,
+                  style: TextStyle(
+                      color: color.withValues(alpha: 0.8), fontSize: 13)),
               const SizedBox(height: 4),
               Text(
                 Formatters.formatMoney(amount),

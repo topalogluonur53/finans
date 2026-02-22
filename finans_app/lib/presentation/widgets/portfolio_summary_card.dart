@@ -5,7 +5,8 @@ class PortfolioSummaryCard extends StatelessWidget {
   final double totalValue;
   final double? profitLoss;
 
-  const PortfolioSummaryCard({super.key, required this.totalValue, this.profitLoss});
+  const PortfolioSummaryCard(
+      {super.key, required this.totalValue, this.profitLoss});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,7 @@ class PortfolioSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.withOpacity(0.3),
+            color: Colors.purple.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -47,22 +48,25 @@ class PortfolioSummaryCard extends StatelessWidget {
           // Profit Loss Section (if data)
           // For MVP just dummy data or passed data
           if (profitLoss != null)
-          Row(
-            children: [
-              Icon(
-                profitLoss! >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                color: profitLoss! >= 0 ? Colors.greenAccent : Colors.redAccent,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                Formatters.formatMoney(profitLoss!),
-                style: TextStyle(
-                  color: profitLoss! >= 0 ? Colors.greenAccent : Colors.redAccent,
-                  fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Icon(
+                  profitLoss! >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                  color:
+                      profitLoss! >= 0 ? Colors.greenAccent : Colors.redAccent,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                Text(
+                  Formatters.formatMoney(profitLoss!),
+                  style: TextStyle(
+                    color: profitLoss! >= 0
+                        ? Colors.greenAccent
+                        : Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

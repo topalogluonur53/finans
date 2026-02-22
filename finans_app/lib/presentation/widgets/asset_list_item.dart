@@ -13,11 +13,12 @@ class AssetListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final market = Provider.of<MarketProvider>(context);
-    
-    // Parse the asset type enum from string
+
     AssetType? assetType;
     try {
-      assetType = AssetType.values.firstWhere((e) => e.toString().split('.').last == asset.type);
+      assetType = AssetType.values.firstWhere((e) =>
+          e.backendType == asset.type ||
+          e.name.toLowerCase() == asset.type.toLowerCase());
     } catch (_) {}
 
     // Get market symbol and multiplier
@@ -26,25 +27,34 @@ class AssetListItem extends StatelessWidget {
     final bool isUsdBased = assetType?.isUsdBased ?? false;
 
     double currentPrice = market.getPrice(marketSymbol);
-    
+
     // Apply unit multiplier (e.g., PAXG ounce to gram)
     if (currentPrice > 0) {
       currentPrice *= multiplier;
-      
+
       // Convert to TRY if the asset is priced in USD (Crypto/Commodities)
       if (isUsdBased) {
         currentPrice *= market.usdTryRate;
       }
     }
-    
+
     // If no market price, use purchase price or unknown (0)
-    final double displayPrice = currentPrice > 0 ? currentPrice : asset.purchasePrice;
+    final double displayPrice =
+        currentPrice > 0 ? currentPrice : asset.purchasePrice;
     final double totalValue = asset.quantity * displayPrice;
-    
+
+    // Convert purchase price to TRY for cost if USD based
+    double unitCost = asset.purchasePrice;
+    if (isUsdBased && market.usdTryRate > 0) {
+      unitCost *= market.usdTryRate;
+    }
+
+    final double totalCost = asset.quantity * unitCost;
+
     // Calculate P/L
-    double profitLoss = totalValue - (asset.quantity * asset.purchasePrice);
-    double profitLossPercent = (asset.quantity * asset.purchasePrice) > 0 
-        ? (profitLoss / (asset.quantity * asset.purchasePrice) * 100) 
+    double profitLoss = totalValue - totalCost;
+    double profitLossPercent = totalCost > 0
+        ? (profitLoss / totalCost * 100)
         : 0;
 
     return Container(
@@ -61,13 +71,17 @@ class AssetListItem extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(asset.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(asset.name,
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     Text('Miktar: ${asset.quantity} ${asset.symbol}'),
-                    Text('Alış Fiyatı: ${Formatters.formatMoney(asset.purchasePrice)}'),
+                    Text(
+                        'Alış Fiyatı: ${Formatters.formatMoney(asset.purchasePrice)}${isUsdBased ? " (USD)" : ""}'),
                     const SizedBox(height: 16),
                     if (asset.notes != null && asset.notes!.isNotEmpty)
-                      Text('Notlar: ${asset.notes!}', style: const TextStyle(fontStyle: FontStyle.italic)),
+                      Text('Notlar: ${asset.notes!}',
+                          style: const TextStyle(fontStyle: FontStyle.italic)),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
@@ -93,11 +107,13 @@ class AssetListItem extends StatelessWidget {
                       children: [
                         Text(
                           asset.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         Text(
                           '${asset.quantity} ${asset.symbol ?? ''}',
-                          style: const TextStyle(color: AppTheme.textDim, fontSize: 12),
+                          style: const TextStyle(
+                              color: AppTheme.textDim, fontSize: 12),
                         ),
                       ],
                     ),
@@ -108,7 +124,8 @@ class AssetListItem extends StatelessWidget {
                   children: [
                     Text(
                       Formatters.formatMoney(totalValue),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -117,25 +134,33 @@ class AssetListItem extends StatelessWidget {
                         Text(
                           Formatters.formatMoney(profitLoss),
                           style: TextStyle(
-                            color: profitLoss >= 0 ? Colors.greenAccent : Colors.redAccent,
+                            color: profitLoss >= 0
+                                ? Colors.greenAccent
+                                : Colors.redAccent,
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: (profitLoss >= 0 ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                            color: (profitLoss >= 0 ? Colors.green : Colors.red)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                              color: (profitLoss >= 0 ? Colors.green : Colors.red).withValues(alpha: 0.3),
+                              color:
+                                  (profitLoss >= 0 ? Colors.green : Colors.red)
+                                      .withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(
                             Formatters.formatPercent(profitLossPercent),
                             style: TextStyle(
-                              color: profitLoss >= 0 ? Colors.greenAccent : Colors.redAccent,
+                              color: profitLoss >= 0
+                                  ? Colors.greenAccent
+                                  : Colors.redAccent,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -164,16 +189,19 @@ class _AssetIcon extends StatelessWidget {
     IconData iconData = Icons.attach_money;
     Color color = Colors.blue;
 
-    if (type.contains('GOLD') || type.contains('COMMODITY')) {
+    final normalizedType = type.toLowerCase();
+    if (normalizedType.contains('gold') ||
+        normalizedType.contains('commodity')) {
       iconData = Icons.monetization_on;
       color = Colors.amber;
-    } else if (type.contains('CRYPTO')) {
+    } else if (normalizedType.contains('crypto')) {
       iconData = Icons.currency_bitcoin;
       color = Colors.orange;
-    } else if (type.contains('USD') || type.contains('CURRENCY')) {
+    } else if (normalizedType.contains('usd') ||
+        normalizedType.contains('currency')) {
       iconData = Icons.payments;
       color = Colors.green;
-    } else if (type.contains('STOCK')) {
+    } else if (normalizedType.contains('stock')) {
       iconData = Icons.business_center;
       color = Colors.blue;
     }
@@ -181,7 +209,7 @@ class _AssetIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: Icon(iconData, color: color),

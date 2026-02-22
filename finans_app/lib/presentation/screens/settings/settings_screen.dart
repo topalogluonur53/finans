@@ -21,7 +21,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppTheme.backgroundDark, AppTheme.surfaceDark.withOpacity(0.5)],
+            colors: [
+              AppTheme.backgroundDark,
+              AppTheme.surfaceDark.withValues(alpha: 0.5)
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -37,18 +40,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Bildirimler',
                   subtitle: 'Fiyat uyarıları ve haberler',
                   value: _notificationsEnabled,
-                  onChanged: (value) => setState(() => _notificationsEnabled = value),
+                  onChanged: (value) =>
+                      setState(() => _notificationsEnabled = value),
                 ),
                 _buildSwitchTile(
                   icon: Icons.dark_mode_outlined,
                   title: 'Karanlık Mod',
                   subtitle: 'Gözlerinizi dinlendirin',
                   value: _darkModeEnabled,
-                  onChanged: (value) => setState(() => _darkModeEnabled = value),
+                  onChanged: (value) =>
+                      setState(() => _darkModeEnabled = value),
                 ),
               ],
             ),
-            
             _buildSettingsCard(
               title: 'Güvenlik & Gizlilik',
               children: [
@@ -57,7 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Biyometrik Giriş',
                   subtitle: 'Hızlı ve güvenli erişim',
                   value: _biometricEnabled,
-                  onChanged: (value) => setState(() => _biometricEnabled = value),
+                  onChanged: (value) =>
+                      setState(() => _biometricEnabled = value),
                 ),
                 _buildNavigationTile(
                   icon: Icons.lock_outline,
@@ -67,7 +72,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            
             _buildSettingsCard(
               title: 'Bölgesel Ayarlar',
               children: [
@@ -87,7 +91,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            
             _buildSettingsCard(
               title: 'Destek & Hakkında',
               children: [
@@ -105,7 +108,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -121,11 +123,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
-
     );
   }
 
-  Widget _buildSettingsCard({required String title, required List<Widget> children}) {
+  Widget _buildSettingsCard(
+      {required String title, required List<Widget> children}) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -150,7 +152,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSwitchTile({
-
     required IconData icon,
     required String title,
     required String subtitle,
@@ -170,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AppTheme.primaryColor,
+        activeThumbColor: AppTheme.primaryColor,
       ),
     );
   }
@@ -272,7 +273,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
+            child:
+                const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
           ),
           TextButton(
             onPressed: () {
@@ -285,7 +287,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
-            child: const Text('Değiştir', style: TextStyle(color: AppTheme.primaryColor)),
+            child: const Text('Değiştir',
+                style: TextStyle(color: AppTheme.primaryColor)),
           ),
         ],
       ),
@@ -301,21 +304,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Finans App',
           style: TextStyle(color: AppTheme.textLight),
         ),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Versiyon: 1.0.0',
               style: TextStyle(color: AppTheme.textDim),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'Finans App ile finansal durumunuzu kolayca takip edin. Portföy yönetimi, gelir-gider takibi, piyasa verileri ve daha fazlası...',
               style: TextStyle(color: AppTheme.textLight),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               '© 2026 Finans App. Tüm hakları saklıdır.',
               style: TextStyle(color: AppTheme.textDim, fontSize: 12),
             ),
@@ -324,69 +327,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat', style: TextStyle(color: AppTheme.primaryColor)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPrivacyPolicy() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text(
-          'Gizlilik Politikası',
-          style: TextStyle(color: AppTheme.textLight),
-        ),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Finans App olarak kullanıcı gizliliğine önem veriyoruz. '
-            'Verileriniz güvenli bir şekilde saklanır ve üçüncü şahıslarla paylaşılmaz.\n\n'
-            'Toplanan Veriler:\n'
-            '- Kullanıcı hesap bilgileri\n'
-            '- Portföy ve finans verileri\n'
-            '- Uygulama kullanım istatistikleri\n\n'
-            'Verileriniz yalnızca uygulama içi hizmetleri sağlamak için kullanılır.',
-            style: TextStyle(color: AppTheme.textLight),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat', style: TextStyle(color: AppTheme.primaryColor)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTermsOfService() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text(
-          'Kullanım Koşulları',
-          style: TextStyle(color: AppTheme.textLight),
-        ),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Finans App Kullanım Koşulları\n\n'
-            '1. Uygulama, finansal bilgileri takip etmek için bir araçtır.\n'
-            '2. Veriler yalnızca bilgilendirme amaçlıdır.\n'
-            '3. Yatırım kararları kullanıcının sorumluluğundadır.\n'
-            '4. Uygulama geliştiricileri finansal kayıplardan sorumlu değildir.\n'
-            '5. Hesap güvenliği kullanıcının sorumluluğundadır.\n\n'
-            'Uygulamayı kullanarak bu koşulları kabul etmiş sayılırsınız.',
-            style: TextStyle(color: AppTheme.textLight),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat', style: TextStyle(color: AppTheme.primaryColor)),
+            child: const Text('Kapat',
+                style: TextStyle(color: AppTheme.primaryColor)),
           ),
         ],
       ),

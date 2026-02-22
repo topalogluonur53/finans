@@ -25,7 +25,8 @@ class DynamicButton extends StatefulWidget {
   State<DynamicButton> createState() => _DynamicButtonState();
 }
 
-class _DynamicButtonState extends State<DynamicButton> with SingleTickerProviderStateMixin {
+class _DynamicButtonState extends State<DynamicButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -64,7 +65,7 @@ class _DynamicButtonState extends State<DynamicButton> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final buttonColor = widget.color ?? AppTheme.primaryColor;
-    
+
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -76,20 +77,26 @@ class _DynamicButtonState extends State<DynamicButton> with SingleTickerProvider
           width: widget.width ?? double.infinity,
           height: widget.height,
           decoration: BoxDecoration(
-            color: widget.onTap == null ? Colors.grey.withOpacity(0.3) : buttonColor,
+            color: widget.onTap == null
+                ? Colors.grey.withValues(alpha: 0.3)
+                : buttonColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: widget.onTap == null ? [] : [
-              BoxShadow(
-                color: buttonColor.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            gradient: widget.onTap == null ? null : LinearGradient(
-              colors: [buttonColor, buttonColor.withOpacity(0.8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            boxShadow: widget.onTap == null
+                ? []
+                : [
+                    BoxShadow(
+                      color: buttonColor.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+            gradient: widget.onTap == null
+                ? null
+                : LinearGradient(
+                    colors: [buttonColor, buttonColor.withValues(alpha: 0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
           ),
           child: Center(
             child: widget.isLoading

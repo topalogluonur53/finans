@@ -6,13 +6,20 @@ ASSET_TYPES = [
     ('GOLD_QUARTER', 'Çeyrek Altın'),
     ('GOLD_HALF', 'Yarım Altın'),
     ('GOLD_FULL', 'Tam Altın'),
+    ('SILVER_GRAM', 'Gram Gümüş'),
+    ('PLATINUM_GRAM', 'Gram Platin'),
+    ('PALLADIUM_GRAM', 'Gram Paladyum'),
     ('CRYPTO_BTC', 'Bitcoin'),
     ('CRYPTO_ETH', 'Ethereum'),
     ('CRYPTO_SOL', 'Solana'),
+    ('CRYPTO_BNB', 'Binance Coin'),
+    ('CRYPTO_XRP', 'Ripple'),
     ('CURRENCY_USD', 'Dolar'),
     ('CURRENCY_EUR', 'Euro'),
+    ('CURRENCY_GBP', 'Sterlin'),
+    ('CURRENCY_JPY', 'Japon Yeni'),
+    ('CURRENCY_CHF', 'İsviçre Frangı'),
     ('STOCK', 'Hisse Senedi'),
-    ('SILVER_GRAM', 'Gram Gümüş'),
 ]
 
 class Asset(models.Model):

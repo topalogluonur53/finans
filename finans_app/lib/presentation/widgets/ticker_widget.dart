@@ -11,10 +11,10 @@ class TickerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (prices.isEmpty) return const SizedBox.shrink();
-    
+
     return Container(
       height: 50,
-      color: AppTheme.surfaceDark.withOpacity(0.5),
+      color: AppTheme.surfaceDark.withValues(alpha: 0.5),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -25,10 +25,12 @@ class TickerWidget extends StatelessWidget {
           final isPositive = data.changePercent >= 0;
           return InkWell(
             onTap: () {
-               ScaffoldMessenger.of(context).hideCurrentSnackBar();
-               ScaffoldMessenger.of(context).showSnackBar(
-                 SnackBar(content: Text('${data.symbol} detayları yakında eklenecek.')),
-               );
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content:
+                        Text('${data.symbol} detayları yakında eklenecek.')),
+              );
             },
             borderRadius: BorderRadius.circular(8),
             child: Padding(
@@ -37,22 +39,27 @@ class TickerWidget extends StatelessWidget {
                 children: [
                   Text(
                     data.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    Formatters.formatMoney(
-                      data.price,
-                      currency: data.symbol == 'AU/AG' ? 'NONE' : 
-                               (data.symbol.contains('USD') || data.category == 'crypto') ? 'USD' : 'TRY'
-                    ),
+                    Formatters.formatMoney(data.price,
+                        currency: data.symbol == 'AU/AG'
+                            ? 'NONE'
+                            : (data.symbol.contains('USD') ||
+                                    data.category == 'crypto')
+                                ? 'USD'
+                                : 'TRY'),
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     Formatters.formatPercent(data.changePercent),
                     style: TextStyle(
-                      color: isPositive ? AppTheme.secondaryColor : AppTheme.errorColor,
+                      color: isPositive
+                          ? AppTheme.secondaryColor
+                          : AppTheme.errorColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),

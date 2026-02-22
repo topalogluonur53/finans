@@ -3,12 +3,17 @@ from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import status
 from .models import MarketData, Alarm
 from .serializers import MarketDataSerializer, AlarmSerializer
 from django.contrib import messages
 from decimal import Decimal
 
+
+# ─────────────────────────────────────
 # API Views
+# ─────────────────────────────────────
+
 class MarketDataViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MarketData.objects.all().order_by('symbol')
     serializer_class = MarketDataSerializer
@@ -29,8 +34,8 @@ class MarketDataViewSet(viewsets.ReadOnlyModelViewSet):
         data = MarketData.objects.all().values('symbol', 'price', 'change_percent_24h', 'market_type')
         return Response(list(data))
 
+
 class AlarmViewSet(viewsets.ModelViewSet):
-    queryset = Alarm.objects.all()
     serializer_class = AlarmSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -40,7 +45,25 @@ class AlarmViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Alarm aktif/pasif durumunu değiştirir."""
+        alarm = self.get_object()
+        alarm.is_active = not alarm.is_active
+        alarm.save()
+        return Response({'is_active': alarm.is_active}, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        """Alarmı siler."""
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ─────────────────────────────────────
 # Template Views
+# ─────────────────────────────────────
+
 def piyasa_page(request):
     """
     Renders the market page with Emtia, Borsa, and Döviz categories.
@@ -53,6 +76,7 @@ def piyasa_page(request):
     }
     return render(request, 'market/piyasa.html', context)
 
+
 @login_required
 def create_alarm(request):
     """
@@ -62,7 +86,7 @@ def create_alarm(request):
         symbol = request.POST.get('symbol')
         target_price = request.POST.get('target_price')
         condition = request.POST.get('condition')
-        
+
         try:
             Alarm.objects.create(
                 user=request.user,
@@ -74,5 +98,5 @@ def create_alarm(request):
             messages.success(request, f"{symbol} için alarm başarıyla kuruldu.")
         except Exception as e:
             messages.error(request, f"Alarm kurulurken hata oluştu: {str(e)}")
-            
+
     return redirect('piyasa-page')

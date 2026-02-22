@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:finans_app/data/models/ipo.dart';
 import 'package:finans_app/data/models/ipo_news.dart';
@@ -11,29 +12,31 @@ class IPOService {
   /// Fetch IPO and stock market news
   Future<List<IPONews>> fetchIPONews() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/stock_news?limit=50&apikey=$_apiKey'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/stock_news?limit=50&apikey=$_apiKey'),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         // Filter news for IPO keywords to make it relevant
         final newsList = data
             .map((item) => IPONews.fromJson(item))
-            .where((news) => 
-                news.title.toLowerCase().contains('ipo') || 
+            .where((news) =>
+                news.title.toLowerCase().contains('ipo') ||
                 news.content.toLowerCase().contains('ipo') ||
                 news.title.toLowerCase().contains('offering'))
             .toList();
-            
+
         if (newsList.isNotEmpty) {
           return newsList;
         }
       }
       return _getFallbackNews();
     } catch (e) {
-      print('Error fetching IPO news: $e');
-      return _getFallbackNews();
+      debugPrint('Error fetching IPO news: $e'); // Corrected message
+      return _getFallbackNews(); // Ensured return statement is present
     }
   }
 
@@ -41,22 +44,27 @@ class IPOService {
     return [
       IPONews(
         title: 'Borsa İstanbul 2026 Halka Arz Beklentileri',
-        content: '2026 yılında Borsa İstanbul\'da teknoloji ve enerji şirketlerinin ağırlıkta olduğu yeni bir halka arz dalgası bekleniyor. SPK onay sürecindeki şirket sayısı artıyor.',
+        content:
+            '2026 yılında Borsa İstanbul\'da teknoloji ve enerji şirketlerinin ağırlıkta olduğu yeni bir halka arz dalgası bekleniyor. SPK onay sürecindeki şirket sayısı artıyor.',
         date: DateTime.now().toIso8601String(),
         url: 'https://borsaistanbul.com',
         source: 'Finans Gündem',
       ),
       IPONews(
         title: 'Yeni Halka Arz Onayları ve Talep Toplama',
-        content: 'Şubat ayında beş yeni şirketin halka arz başvurusu onaylandı. Empa Elektronik ve Ata Turizm bu haftanın en çok konuşulan arzları arasında.',
-        date: DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
+        content:
+            'Şubat ayında beş yeni şirketin halka arz başvurusu onaylandı. Empa Elektronik ve Ata Turizm bu haftanın en çok konuşulan arzları arasında.',
+        date:
+            DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
         url: 'https://spk.gov.tr',
         source: 'Para Analiz',
       ),
       IPONews(
         title: 'BIST Halka Arz Endeksi (XHARZ) Rekor Kırıyor',
-        content: 'Yeni halka arz edilen şirketlerin yüksek performansı ile XHARZ endeksi 2026 yılının ilk çeyreğinde piyasa ortalamasının üzerinde getiri sağladı.',
-        date: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        content:
+            'Yeni halka arz edilen şirketlerin yüksek performansı ile XHARZ endeksi 2026 yılının ilk çeyreğinde piyasa ortalamasının üzerinde getiri sağladı.',
+        date:
+            DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
         url: 'https://bigpara.hurriyet.com.tr',
         source: 'BigPara',
       ),
@@ -64,16 +72,20 @@ class IPOService {
   }
 
   // Alternative: IEX Cloud API
-  static const String _iexToken = 'pk_demo'; // Replace with your token from iexcloud.io
+  static const String _iexToken =
+      'pk_demo'; // Replace with your token from iexcloud.io
   static const String _iexBaseUrl = 'https://cloud.iexapis.com/stable';
 
   /// Fetch IPO calendar (upcoming and recent IPOs)
   Future<List<IPO>> fetchIPOCalendar() async {
     try {
       // Try Financial Modeling Prep first
-      final response = await http.get(
-        Uri.parse('$_baseUrl/ipo_calendar?from=${_getDateString(-30)}&to=${_getDateString(90)}&apikey=$_apiKey'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(
+                '$_baseUrl/ipo_calendar?from=${_getDateString(-30)}&to=${_getDateString(90)}&apikey=$_apiKey'),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -87,11 +99,11 @@ class IPOService {
       if (iexData.isNotEmpty) {
         return iexData;
       }
-      
+
       // If all APIs return empty, use our curated fallback
       return _getFallbackIPOs();
     } catch (e) {
-      print('Error fetching IPO calendar: $e');
+      debugPrint('Error fetching IPO calendar: $e');
       // Return fallback data
       return _getFallbackIPOs();
     }
@@ -99,9 +111,12 @@ class IPOService {
 
   Future<List<IPO>> _fetchFromIEX() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_iexBaseUrl/stock/market/upcoming-ipos?token=$_iexToken'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(
+                '$_iexBaseUrl/stock/market/upcoming-ipos?token=$_iexToken'),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -110,7 +125,7 @@ class IPOService {
       }
       return [];
     } catch (e) {
-      print('Error fetching from IEX: $e');
+      debugPrint('Error fetching from IEX: $e');
       return [];
     }
   }

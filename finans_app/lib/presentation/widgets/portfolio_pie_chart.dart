@@ -48,9 +48,10 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
     // Group assets by type and calculate total value per type
     Map<String, double> typeValues = {};
     double totalValue = 0;
-    
+
     for (var asset in widget.assets) {
-      final value = widget.portfolioProvider.getAssetCurrentValue(asset, widget.marketProvider);
+      final value = widget.portfolioProvider
+          .getAssetCurrentValue(asset, widget.marketProvider);
       typeValues[asset.name] = (typeValues[asset.name] ?? 0) + value;
       totalValue += value;
     }
@@ -66,7 +67,7 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -93,7 +94,8 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
                         _touchedIndex = -1;
                         return;
                       }
-                      _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                      _touchedIndex =
+                          pieTouchResponse.touchedSection!.touchedSectionIndex;
                     });
                   },
                 ),
@@ -102,7 +104,7 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
                   final entry = mapEntry.value;
                   final isTouched = idx == _touchedIndex;
                   final percentage = (entry.value / totalValue) * 100;
-                  
+
                   return PieChartSectionData(
                     color: _chartColors[idx % _chartColors.length],
                     value: entry.value,
@@ -130,7 +132,7 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
               final idx = mapEntry.key;
               final entry = mapEntry.value;
               final percentage = (entry.value / totalValue) * 100;
-              
+
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -145,7 +147,8 @@ class _PortfolioPieChartState extends State<PortfolioPieChart> {
                   const SizedBox(width: 6),
                   Text(
                     '${entry.key} (${percentage.toStringAsFixed(1)}%)',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textDim),
+                    style:
+                        const TextStyle(fontSize: 12, color: AppTheme.textDim),
                   ),
                 ],
               );

@@ -14,43 +14,53 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _token;
   bool get isAuthenticated => _token != null;
   bool get isLoading => _isLoading;
-  
+
   // User detail getters
   String? get username => _user?.username;
   String? get email => _user?.email;
-  String? get createdAt => 'Kullanıcı'; // TODO: Add created_at to User model if needed
-
+  // User model doesn't have createdAt yet, using a placeholder if needed
+  String? get userType => 'Kullanıcı';
 
   Future<void> login(String username, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final url = Uri.parse(ApiConstants.baseUrl + ApiConstants.loginEndpoint);
-      print('Login attempting URL: $url');
-      print('Login body: ${jsonEncode({'username': username, 'password': password})}');
+      final url =
+          Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+      http.Response? response;
+      bool isBackendSuccess = false;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _token = data['access'];
-        // Ideally fetch user details here
-        // For MVP, just assume login success.
-        // Or store username in prefs if returned?
-        // SimpleJWT returns only tokens normally.
-        
-        await _fetchUserDetails();
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', _token!);
-        await prefs.setString('refresh_token', data['refresh']);
+      try {
+        response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'username': username, 'password': password}),
+        );
+        if (response.statusCode == 200) {
+          isBackendSuccess = true;
+          final data = jsonDecode(response.body);
+          _token = data['access'];
+          await _fetchUserDetails();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', _token!);
+          await prefs.setString('refresh_token', data['refresh']);
+        }
+      } catch (e) {
+        debugPrint('Backend login error: $e');
+      }
 
-      } else {
-        throw Exception('Login failed: ${response.body}');
+      // KULLANICI İSTEĞİ: Demo giriş başarısız olursa sisteme çevrimdışı / dummy modda girmesine izin ver.
+      if (!isBackendSuccess) {
+        if (username.toLowerCase() == 'demo' && password == '123456') {
+          _token = 'offline_demo_token';
+          _user = User(id: 0, username: 'demo', email: 'demo@finans.app', firstName: 'Önizleme', lastName: 'Modu');
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', _token!);
+        } else {
+          throw Exception('Login failed: ${response?.body ?? 'Connection Error'}');
+        }
       }
     } finally {
       _isLoading = false;
@@ -58,18 +68,20 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> register(String username, String email, String password) async {
+  Future<void> register(String username, String email, String password, {String firstName = '', String lastName = ''}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       final response = await http.post(
-        Uri.parse(ApiConstants.baseUrl + '/auth/register/'),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.registerEndpoint}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
           'email': email,
           'password': password,
+          'first_name': firstName,
+          'last_name': lastName,
         }),
       );
 
@@ -87,12 +99,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-
   Future<void> _fetchUserDetails() async {
     if (_token == null) return;
     try {
       final response = await http.get(
-        Uri.parse(ApiConstants.baseUrl + '/auth/user/'),
+        Uri.parse('${ApiConstants.baseUrl}/auth/user/'),
         headers: {
           'Authorization': 'Bearer $_token',
         },
@@ -101,7 +112,7 @@ class AuthProvider extends ChangeNotifier {
         _user = User.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
-      print('Error fetching user: $e');
+      debugPrint('Error fetching user details: $e');
     }
   }
 
@@ -115,35 +126,27 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> tryAutoLogin() async {
-    print('AuthProvider: tryAutoLogin started');
     _isLoading = true;
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!prefs.containsKey('access_token')) {
-        print('AuthProvider: No token found in prefs');
         _isLoading = false;
         notifyListeners();
         return;
       }
-      
+
       _token = prefs.getString('access_token');
-      print('AuthProvider: Token found, verifying...');
-      
+
       await _fetchUserDetails();
-      
+
       if (_user == null) {
-        print('AuthProvider: User details fetch failed (user is null), logging out...');
         await logout();
-      } else {
-        print('AuthProvider: Auto-login successful for ${_user?.username}');
       }
-    } catch (e, stack) {
-      print('AuthProvider: Error during auto-login: $e');
-      print(stack);
+    } catch (e) {
+      debugPrint('AuthProvider: Error during auto-login: $e');
       await logout();
     } finally {
-      print('AuthProvider: tryAutoLogin finished. isLoading was $_isLoading, setting to false.');
       _isLoading = false;
       notifyListeners();
     }

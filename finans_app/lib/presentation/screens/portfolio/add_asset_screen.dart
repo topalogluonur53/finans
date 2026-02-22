@@ -15,14 +15,14 @@ class AddAssetScreen extends StatefulWidget {
 
 class _AddAssetScreenState extends State<AddAssetScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers
   final _nameController = TextEditingController();
   final _symbolController = TextEditingController();
   final _quantityController = TextEditingController();
   final _priceController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   // State
   AssetCategory? _selectedCategory;
   AssetType? _selectedType;
@@ -43,11 +43,13 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     if (_formKey.currentState!.validate()) {
       if (_selectedType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lütfen varlık türü seçin'), backgroundColor: Colors.orange),
+          const SnackBar(
+              content: Text('Lütfen varlık türü seçin'),
+              backgroundColor: Colors.orange),
         );
         return;
       }
-      
+
       if (_quantityController.text.isEmpty || _priceController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Miktar ve Fiyat zorunludur')),
@@ -59,26 +61,35 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
 
       try {
         final asset = Asset(
-          type: _selectedType!.toString().split('.').last,
-          name: _nameController.text.isEmpty ? _selectedType!.label : _nameController.text,
-          symbol: _symbolController.text.isEmpty ? null : _symbolController.text,
+          type: _selectedType!.backendType,
+          name: _nameController.text.isEmpty
+              ? _selectedType!.label
+              : _nameController.text,
+          symbol:
+              _symbolController.text.isEmpty ? null : _symbolController.text,
           quantity: double.parse(_quantityController.text),
           purchasePrice: double.parse(_priceController.text),
           purchaseDate: _selectedDate,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
         );
 
-        final success = await Provider.of<PortfolioProvider>(context, listen: false).addAsset(asset);
-        
+        final success =
+            await Provider.of<PortfolioProvider>(context, listen: false)
+                .addAsset(asset);
+
         if (mounted) {
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Varlık başarıyla eklendi!'), backgroundColor: Colors.green),
+              const SnackBar(
+                  content: Text('Varlık başarıyla eklendi!'),
+                  backgroundColor: Colors.green),
             );
             Navigator.pop(context);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Varlık eklenirken hata oluştu.'), backgroundColor: Colors.red),
+              const SnackBar(
+                  content: Text('Varlık eklenirken hata oluştu.'),
+                  backgroundColor: Colors.red),
             );
           }
         }
@@ -95,20 +106,33 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       }
     }
   }
-  
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              surface: AppTheme.surfaceDark,
+              onSurface: AppTheme.textLight,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);
     }
   }
 
-  void _onCategoryChanged(AssetCategory? category) {
+  void _onCategoryChanged(AssetCategory category) {
     setState(() {
       _selectedCategory = category;
       _selectedType = null; // Reset type when category changes
@@ -117,186 +141,305 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     });
   }
 
-  void _onTypeChanged(AssetType? type) {
-    if (type != null) {
-      setState(() {
-        _selectedType = type;
-        _nameController.text = type.label;
-        _symbolController.text = type.symbol;
-      });
-    }
+  void _onTypeChanged(AssetType type) {
+    setState(() {
+      _selectedType = type;
+      _nameController.text = type.label;
+      _symbolController.text = type.symbol;
+    });
+  }
+
+  InputDecoration _customInputDecoration({required String labelText, required IconData prefixIcon, String? hintText}) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: Icon(prefixIcon, color: AppTheme.primaryColor.withOpacity(0.7)),
+      filled: true,
+      fillColor: AppTheme.backgroundDark,
+      labelStyle: const TextStyle(color: AppTheme.textDim),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppTheme.textDim.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final availableTypes = _selectedCategory != null 
-        ? AssetTypeExt.byCategory(_selectedCategory!)
-        : <AssetType>[];
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Varlık Ekle')),
+      backgroundColor: AppTheme.backgroundDark,
+      appBar: AppBar(
+        title: const Text('Varlık Ekle', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Category Selection
-              DropdownButtonFormField<AssetCategory>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Kategori',
-                  prefixIcon: const Icon(Icons.category),
-                  hintText: 'Varlık kategorisi seçin',
-                ),
-                items: AssetCategory.values.map((category) {
-                  return DropdownMenuItem(
-                    value: category,
-                    child: Row(
-                      children: [
-                        Text(category.icon, style: const TextStyle(fontSize: 20)),
-                        const SizedBox(width: 12),
-                        Text(category.label),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: _onCategoryChanged,
+              _buildCompactSectionTitle('Kategori', Icons.category_rounded),
+              const SizedBox(height: 8),
+              _buildCategoryScroll(),
+              
+              const SizedBox(height: 16),
+              _buildCompactSectionTitle('Varlık Türü', Icons.inventory_2_rounded),
+              const SizedBox(height: 8),
+              _selectedCategory == null
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('Lütfen önce bir kategori seçin.', style: TextStyle(color: AppTheme.textDim, fontSize: 13)),
+                    )
+                  : _buildTypeScroll(),
+
+              const SizedBox(height: 20),
+              _buildCompactSectionTitle('Detaylar', Icons.edit_document),
+              const SizedBox(height: 8),
+              _buildCompactDetailsForm(),
+              
+              const SizedBox(height: 24),
+              DynamicButton(
+                label: 'Kaydet',
+                onTap: _submit,
+                isLoading: _isLoading,
+                icon: Icons.check,
               ),
               const SizedBox(height: 16),
-
-              // Asset Type Selection (filtered by category)
-              if (_selectedCategory != null) ...[
-                DropdownButtonFormField<AssetType>(
-                  value: _selectedType,
-                  decoration: const InputDecoration(
-                    labelText: 'Varlık Türü',
-                    prefixIcon: Icon(Icons.inventory_2_outlined),
-                  ),
-                  items: availableTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type.label),
-                    );
-                  }).toList(),
-                  onChanged: _onTypeChanged,
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Symbol Field (auto-filled, editable)
-              if (_selectedType != null) ...[
-                TextFormField(
-                  controller: _symbolController,
-                  decoration: const InputDecoration(
-                    labelText: 'Sembol',
-                    hintText: 'Örn: BTC, USD, AAPL',
-                    prefixIcon: Icon(Icons.tag),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Name Field (auto-filled, editable)
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Varlık Adı',
-                    hintText: 'Örn: Bitcoin Yatırımım',
-                    prefixIcon: Icon(Icons.drive_file_rename_outline),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Quantity & Price Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _quantityController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
-                          labelText: 'Miktar',
-                          prefixIcon: Icon(Icons.numbers),
-                        ),
-                        validator: (value) => value!.isEmpty ? 'Gerekli' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _priceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
-                          labelText: 'Alış Fiyatı',
-                          prefixIcon: Icon(Icons.price_change_outlined),
-                        ),
-                        validator: (value) => value!.isEmpty ? 'Gerekli' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Date Picker Field
-                InkWell(
-                  onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceDark,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.textDim.withValues(alpha: 0.1)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, color: AppTheme.textDim, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Alış Tarihi',
-                                style: TextStyle(color: AppTheme.textDim, fontSize: 12),
-                              ),
-                              Text(
-                                DateFormat('dd MMMM yyyy', 'tr_TR').format(_selectedDate),
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textDim),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Notes
-                TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notlar (Opsiyonel)',
-                    prefixIcon: Icon(Icons.note_outlined),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 32),
-
-                // Dynamic Submit Button
-                DynamicButton(
-                  label: 'Kaydet',
-                  onTap: _submit,
-                  isLoading: _isLoading,
-                  icon: Icons.check,
-                ),
-              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCompactSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppTheme.primaryColor, size: 18),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight, fontSize: 15),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryScroll() {
+    return SizedBox(
+      height: 48,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: AssetCategory.values.length,
+        itemBuilder: (context, index) {
+          final category = AssetCategory.values[index];
+          final isSelected = _selectedCategory == category;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ChoiceChip(
+              avatar: Text(category.icon, style: const TextStyle(fontSize: 14)),
+              label: Text(category.label),
+              selected: isSelected,
+              onSelected: (_) => _onCategoryChanged(category),
+              backgroundColor: AppTheme.surfaceDark,
+              selectedColor: AppTheme.primaryColor.withOpacity(0.15),
+              labelStyle: TextStyle(
+                  color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontSize: 13),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: BorderSide(
+                  color: isSelected ? AppTheme.primaryColor : AppTheme.textDim.withOpacity(0.1)),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTypeScroll() {
+    final types = AssetTypeExt.byCategory(_selectedCategory!);
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: types.length,
+        itemBuilder: (context, index) {
+          final type = types[index];
+          final isSelected = _selectedType == type;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ChoiceChip(
+              label: Text(type.label),
+              selected: isSelected,
+              onSelected: (_) => _onTypeChanged(type),
+              backgroundColor: AppTheme.surfaceDark,
+              selectedColor: AppTheme.primaryColor.withOpacity(0.15),
+              labelStyle: TextStyle(
+                  color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              side: BorderSide(
+                  color: isSelected ? AppTheme.primaryColor : AppTheme.textDim.withOpacity(0.1), width: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCompactDetailsForm() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.textDim.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Row 1: Name and Symbol
+          Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: _buildCompactTextField(
+                  controller: _nameController,
+                  label: 'Varlık Adı',
+                  icon: Icons.drive_file_rename_outline,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: _buildCompactTextField(
+                  controller: _symbolController,
+                  label: 'Sembol',
+                  icon: Icons.tag,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Row 2: Quantity and Price
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactTextField(
+                  controller: _quantityController,
+                  label: 'Miktar',
+                  icon: Icons.numbers,
+                  isNumber: true,
+                  validator: (val) => val!.isEmpty ? 'Boş olamaz' : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildCompactTextField(
+                  controller: _priceController,
+                  label: 'Alış Fiyatı',
+                  icon: Icons.price_change_outlined,
+                  isNumber: true,
+                  validator: (val) => val!.isEmpty ? 'Boş olamaz' : null,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Row 3: Date and Notes
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 4,
+                child: InkWell(
+                  onTap: _pickDate,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundDark,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.textDim.withOpacity(0.1)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today_rounded, color: AppTheme.primaryColor.withOpacity(0.7), size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            DateFormat('dd MMM yyyy', 'tr_TR').format(_selectedDate),
+                            style: const TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 5,
+                child: _buildCompactTextField(
+                  controller: _notesController,
+                  label: 'Not',
+                  icon: Icons.note_outlined,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isNumber = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+      validator: validator,
+      style: const TextStyle(fontSize: 13, color: AppTheme.textLight, fontWeight: FontWeight.bold),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 12, color: AppTheme.textDim, fontWeight: FontWeight.normal),
+        prefixIcon: Icon(icon, size: 18, color: AppTheme.primaryColor.withOpacity(0.7)),
+        filled: true,
+        fillColor: AppTheme.backgroundDark,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTheme.textDim.withOpacity(0.1))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+        errorStyle: const TextStyle(height: 0, fontSize: 0), // hide error text to save vertical space
       ),
     );
   }

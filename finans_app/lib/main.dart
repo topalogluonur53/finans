@@ -14,6 +14,11 @@ import 'presentation/screens/portfolio/portfolio_screen.dart';
 import 'presentation/screens/finance/finance_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'presentation/screens/tools/tools_screen.dart';
+import 'presentation/screens/tools/loan_calculator_screen.dart';
+import 'presentation/screens/tools/currency_converter_screen.dart';
+import 'presentation/screens/tools/ipo_screen.dart';
+import 'presentation/screens/tools/notepad/notepad_screen.dart';
+import 'presentation/screens/market/market_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
 
 void main() async {
@@ -46,7 +51,7 @@ class MyApp extends StatelessWidget {
         builder: (context, auth, _) {
           print('Main: Building application... isLoading=${auth.isLoading}, isAuthenticated=${auth.isAuthenticated}');
           return MaterialApp(
-            title: 'Finans App',
+            title: 'Finans App v2.0',
             theme: AppTheme.darkTheme,
             builder: (context, child) {
               if (auth.isLoading) {
@@ -68,6 +73,11 @@ class MyApp extends StatelessWidget {
               '/portfolio': (_) => const PortfolioScreen(),
               '/finance': (_) => const FinanceScreen(),
               '/tools': (_) => const ToolsScreen(),
+              '/tools/loan': (_) => const LoanCalculatorScreen(),
+              '/tools/converter': (_) => const CurrencyConverterScreen(),
+              '/tools/ipo': (_) => const IPOScreen(),
+              '/tools/notepad': (_) => const NotepadScreen(),
+              '/market': (_) => const MarketScreen(),
               '/settings': (_) => const SettingsScreen(),
             },
 

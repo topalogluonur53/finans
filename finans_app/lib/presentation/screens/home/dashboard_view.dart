@@ -2,18 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
+import 'package:finans_app/data/models/asset.dart';
 import 'package:finans_app/data/providers/market_provider.dart';
 import 'package:finans_app/data/providers/portfolio_provider.dart';
-import 'package:finans_app/data/providers/auth_provider.dart';
 import 'package:finans_app/presentation/widgets/ticker_widget.dart';
-import 'package:finans_app/presentation/widgets/portfolio_summary_card.dart';
-import 'package:finans_app/presentation/widgets/asset_list_item.dart';
 import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart';
 import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
 import 'package:finans_app/presentation/widgets/finance_summary_card.dart';
-import 'package:finans_app/presentation/widgets/portfolio_pie_chart.dart';
-
 
 class DashboardView extends StatelessWidget {
   final Function(int)? onNavigateToTab;
@@ -24,200 +20,265 @@ class DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final market = Provider.of<MarketProvider>(context);
     final portfolio = Provider.of<PortfolioProvider>(context);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
     final finance = Provider.of<FinanceProvider>(context);
-    
-    double totalValue = portfolio.getTotalValue(market);
-    
+
+    final double totalValue = portfolio.getTotalValue(market);
+    final double totalCost = portfolio.getTotalCost(market);
+    final double totalPL = totalValue - totalCost;
+    final double totalPLPercent =
+        totalCost > 0 ? (totalPL / totalCost * 100) : 0.0;
+    final bool isPLPositive = totalPL >= 0;
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1200),
         child: Column(
           children: [
-            // Ticker
-            if (market.prices.isNotEmpty)
-              TickerWidget(prices: market.prices),
-            
+
+
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
                   await portfolio.fetchAssets();
-                  // await market.fetchPrices(); // Market polls automatically
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   children: [
-                  const Text('Toplam Varlık', style: TextStyle(color: AppTheme.textDim)),
-                  Text(
-                    Formatters.formatMoney(totalValue),
-                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                   GestureDetector(
-                    onTap: () => onNavigateToTab?.call(1),
-                    child: PortfolioSummaryCard(
-                      totalValue: totalValue,
-                      profitLoss: totalValue - portfolio.getTotalCost(),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Finance Summary
-                  GestureDetector(
-                    onTap: () => onNavigateToTab?.call(2),
-                    child: FinanceSummaryCard(
-                      totalIncome: finance.totalIncome,
-                      totalExpense: finance.totalExpense,
-                    ),
-                  ),
 
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Piyasa Özeti', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      TextButton(
-                        onPressed: () => onNavigateToTab?.call(3),
-                        child: const Text('Piyasaya Git'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (market.prices.isNotEmpty)
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: market.prices.length,
-                        itemBuilder: (context, index) {
-                          final price = market.prices[index];
-                          final isPositive = price.changePercent >= 0;
-                          return Card(
-                            margin: const EdgeInsets.only(right: 12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(price.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  const Spacer(),
-                                  Row(
-                                    children: [
-                                      Text(Formatters.formatMoney(price.price), style: const TextStyle(fontSize: 14)),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '${isPositive ? '+' : ''}${price.changePercent.toStringAsFixed(1)}%',
-                                        style: TextStyle(
-                                          color: isPositive ? Colors.green : Colors.red,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+
+                    // ─── Hero Total Balance Card ───────────────────────────
+                    _TotalBalanceCard(
+                      totalValue: totalValue,
+                      totalCost: totalCost,
+                      totalPL: totalPL,
+                      totalPLPercent: totalPLPercent,
+                      isPLPositive: isPLPositive,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ─── Quick Actions ─────────────────────────────────────
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionButton(
+                            icon: Icons.add_circle_outline,
+                            label: 'Varlık Ekle',
+                            color: AppTheme.primaryColor,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const AddAssetScreen()),
                             ),
-                          );
-                        },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionButton(
+                            icon: Icons.arrow_upward_rounded,
+                            label: 'Gelir Ekle',
+                            color: AppTheme.secondaryColor,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const AddTransactionScreen(
+                                      type: TransactionType.income)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionButton(
+                            icon: Icons.arrow_downward_rounded,
+                            label: 'Gider Ekle',
+                            color: AppTheme.errorColor,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const AddTransactionScreen(
+                                      type: TransactionType.expense)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ─── Finance Summary ───────────────────────────────────
+                    GestureDetector(
+                      onTap: () => onNavigateToTab?.call(2),
+                      child: FinanceSummaryCard(
+                        totalIncome: finance.totalIncome,
+                        totalExpense: finance.totalExpense,
                       ),
                     ),
-                  
-                  const SizedBox(height: 24),
-                  const Text('Hızlı İşlemler', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _ActionButton(
-                        icon: Icons.add, 
-                        label: 'Varlık Ekle', 
-                        color: Colors.blue,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AddAssetScreen()),
-                          );
-                        },
-                      ),
-                      _ActionButton(
-                        icon: Icons.arrow_upward, 
-                        label: 'Gelir Ekle', 
-                        color: Colors.green,
-                        onTap: () {
-                           Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AddTransactionScreen(type: TransactionType.income)),
-                          );
-                        }
-                      ),
-                      _ActionButton(
-                        icon: Icons.arrow_downward, 
-                        label: 'Gider Ekle', 
-                        color: Colors.red,
-                        onTap: () {
-                           Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AddTransactionScreen(type: TransactionType.expense)),
-                          );
-                        }
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  // Pie Chart
-                  if (portfolio.assets.isNotEmpty)
-                    PortfolioPieChart(
-                      assets: portfolio.assets,
-                      marketProvider: market,
-                      portfolioProvider: portfolio,
-                    ),
-                    
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Varlıklarım', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      TextButton(
-                        onPressed: () => onNavigateToTab?.call(1), // Navigate to Portfolio Tab
-                        child: const Text('Tümünü Gör'),
-                      ),
-                    ],
-                  ),
-                  if (portfolio.assets.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('Henüz varlık eklenmemiş.', style: TextStyle(color: AppTheme.textDim), textAlign: TextAlign.center),
-                    )
-                  else
-                    ...portfolio.assets.take(3).map((asset) => AssetListItem(
-                      asset: asset, 
-                    )),
-                ],
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Total Balance Hero Card ───────────────────────────────────────────────────
+
+class _TotalBalanceCard extends StatelessWidget {
+  final double totalValue;
+  final double totalCost;
+  final double totalPL;
+  final double totalPLPercent;
+  final bool isPLPositive;
+
+  const _TotalBalanceCard({
+    required this.totalValue,
+    required this.totalCost,
+    required this.totalPL,
+    required this.totalPLPercent,
+    required this.isPLPositive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final plColor = isPLPositive ? AppTheme.secondaryColor : AppTheme.errorColor;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF002F6C), // Koyu Lacivert (İşbankası Ana)
+            Color(0xFF0057B8), // Orta Mavi
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-    ),
-  );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.account_balance_wallet_outlined,
+                  color: Colors.white70, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'Toplam Portföy Değeri',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            Formatters.formatMoney(totalValue),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              _StatChip(
+                label: 'Kâr / Zarar',
+                value: Formatters.formatMoney(totalPL),
+                color: plColor,
+                prefix: isPLPositive ? '+' : '',
+              ),
+              const SizedBox(width: 12),
+              _StatChip(
+                label: 'Oran',
+                value: Formatters.formatPercent(totalPLPercent),
+                color: plColor,
+                prefix: isPLPositive ? '+' : '',
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('Maliyet',
+                      style: TextStyle(color: Colors.white54, fontSize: 11)),
+                  Text(
+                    Formatters.formatMoney(totalCost),
+                    style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final String prefix;
+
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.prefix = '',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(color: Colors.white60, fontSize: 10)),
+          const SizedBox(height: 2),
+          Text(
+            '$prefix$value',
+            style: TextStyle(
+                color: color, fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+// ─── Quick Action Button ───────────────────────────────────────────────────────
 
 class _ActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color? color;
+  final Color color;
 
   const _ActionButton({
-    required this.icon, 
-    required this.label, 
+    required this.icon,
+    required this.label,
     required this.onTap,
-    this.color,
+    required this.color,
   });
 
   @override
@@ -229,50 +290,100 @@ class _ActionButtonState extends State<_ActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTapDown: (_) => setState(() => _scale = 0.9),
-          onTapUp: (_) => setState(() => _scale = 1.0),
-          onTapCancel: () => setState(() => _scale = 1.0),
-          onTap: widget.onTap,
-          child: AnimatedScale(
-            scale: _scale,
-            duration: const Duration(milliseconds: 100),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceDark,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: (widget.color ?? AppTheme.primaryColor).withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(
-                  color: (widget.color ?? AppTheme.textDim).withOpacity(0.1),
-                ),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _scale = 0.93),
+      onTapUp: (_) => setState(() => _scale = 1.0),
+      onTapCancel: () => setState(() => _scale = 1.0),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: widget.color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: widget.color.withValues(alpha: 0.25)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, color: widget.color, size: 26),
+              const SizedBox(height: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: widget.color),
+                textAlign: TextAlign.center,
               ),
-              child: Icon(
-                widget.icon, 
-                color: widget.color ?? AppTheme.primaryColor, 
-                size: 32
-              ),
-            ),
+            ],
           ),
         ),
-        const SizedBox(height: 10),
-        Text(
-          widget.label, 
-          style: const TextStyle(
-            fontSize: 12, 
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textLight,
-          )
-        ),
-      ],
+      ),
     );
   }
 }
+
+// ─── Market Tile ───────────────────────────────────────────────────────────────
+
+class _MarketTile extends StatelessWidget {
+  final MarketData price;
+  final bool isPositive;
+
+  const _MarketTile({required this.price, required this.isPositive});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isPositive ? AppTheme.secondaryColor : AppTheme.errorColor;
+    return Container(
+      width: 130,
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            price.name,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Spacer(),
+          Text(
+            Formatters.formatMoney(price.price),
+            style:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '${isPositive ? '+' : ''}${price.changePercent.toStringAsFixed(2)}%',
+              style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

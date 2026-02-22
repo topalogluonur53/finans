@@ -29,7 +29,8 @@ class PortfolioProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await http.get(
-        Uri.parse(ApiConstants.baseUrl + ApiConstants.portfolioEndpoint + 'assets/'),
+        Uri.parse(
+            '${ApiConstants.baseUrl}${ApiConstants.portfolioEndpoint}assets/'),
         headers: {'Authorization': 'Bearer $_token'},
       );
       if (response.statusCode == 200) {
@@ -37,7 +38,7 @@ class PortfolioProvider extends ChangeNotifier {
         _assets = data.map((e) => Asset.fromJson(e)).toList();
       }
     } catch (e) {
-      print('Error fetching assets: $e');
+      debugPrint('Error fetching assets: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -48,11 +49,9 @@ class PortfolioProvider extends ChangeNotifier {
     if (_token == null) return false;
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       final url = Uri.parse(ApiConstants.baseUrl + ApiConstants.assetsEndpoint);
-      print('Adding asset to: $url');
-      print('Payload: ${jsonEncode(asset.toJson())}');
 
       final response = await http.post(
         url,
@@ -64,15 +63,14 @@ class PortfolioProvider extends ChangeNotifier {
       );
 
       if (response.statusCode == 201) {
-        print('Asset added successfully');
         await fetchAssets();
         return true;
       } else {
-        print('Failed to add asset: ${response.body}');
+        debugPrint('Failed to add asset: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('Error adding asset: $e');
+      debugPrint('Error adding asset: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -95,18 +93,22 @@ class PortfolioProvider extends ChangeNotifier {
   }
 
   double getPriceForAsset(Asset asset, MarketProvider market) {
-    // Parse the asset type
     AssetType? assetType;
     try {
-      assetType = AssetType.values.firstWhere((e) => e.toString().split('.').last == asset.type);
+      assetType = AssetType.values.firstWhere((e) =>
+          e.backendType == asset.type ||
+          e.name.toLowerCase() == asset.type.toLowerCase());
     } catch (_) {}
 
-    final String marketSymbol = assetType?.symbol ?? asset.symbol ?? '';
+    String marketSymbol = assetType?.symbol ?? '';
+    if (marketSymbol.isEmpty) {
+      marketSymbol = asset.symbol ?? '';
+    }
     final double multiplier = assetType?.unitMultiplier ?? 1.0;
     final bool isUsdBased = assetType?.isUsdBased ?? false;
 
     double price = market.getPrice(marketSymbol);
-    
+
     if (price > 0) {
       price *= multiplier;
       if (isUsdBased) {
@@ -114,19 +116,39 @@ class PortfolioProvider extends ChangeNotifier {
       }
       return price;
     }
-    
+
     return 0.0;
   }
 
-  double getTotalCost() {
-    return _assets.fold(0, (sum, asset) => sum + (asset.quantity * asset.purchasePrice));
+  double getTotalCost(MarketProvider market) {
+    double total = 0;
+    for (var asset in _assets) {
+      total += getAssetCost(asset, market);
+    }
+    return total;
+  }
+
+  double getAssetCost(Asset asset, MarketProvider market) {
+    AssetType? assetType;
+    try {
+      assetType = AssetType.values.firstWhere((e) =>
+          e.backendType == asset.type ||
+          e.name.toLowerCase() == asset.type.toLowerCase());
+    } catch (_) {}
+
+    double cost = asset.purchasePrice;
+    if (assetType?.isUsdBased == true && market.usdTryRate > 0) {
+      cost *= market.usdTryRate;
+    }
+    return asset.quantity * cost;
   }
 
   Future<bool> deleteAsset(int id) async {
     if (_token == null) return false;
     try {
       final response = await http.delete(
-        Uri.parse(ApiConstants.baseUrl + ApiConstants.portfolioEndpoint + 'assets/$id/'),
+        Uri.parse(
+            '${ApiConstants.baseUrl}${ApiConstants.portfolioEndpoint}assets/$id/'),
         headers: {'Authorization': 'Bearer $_token'},
       );
 
@@ -136,7 +158,7 @@ class PortfolioProvider extends ChangeNotifier {
         return true;
       }
     } catch (e) {
-      print('Error deleting asset: $e');
+      debugPrint('Error deleting asset: $e');
     }
     return false;
   }
