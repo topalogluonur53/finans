@@ -161,12 +161,12 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen>
     );
   }
 
-  void _addTag() {
-    final tag = _tagController.text.trim();
+  void _addTag({String? tagString}) {
+    final tag = tagString ?? _tagController.text.trim();
     if (tag.isNotEmpty && !_tags.contains(tag)) {
       setState(() {
         _tags.add(tag);
-        _tagController.clear();
+        if (tagString == null) _tagController.clear();
       });
     }
   }
@@ -233,7 +233,7 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen>
                           height: 1.3,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Baslik...',
+                          hintText: 'İşlem veya Analiz Başlığı...',
                           border: InputBorder.none,
                           hintStyle: TextStyle(
                             fontSize: 26,
@@ -261,7 +261,7 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen>
                           letterSpacing: 0.1,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Notunuzu buraya yazin...',
+                          hintText: 'Hedef fiyat, piyasa beklentileri veya stratejiniz...',
                           border: InputBorder.none,
                           hintStyle: TextStyle(
                             fontSize: 16,
@@ -448,7 +448,7 @@ class _TagsSection extends StatelessWidget {
   final Color textColor;
   final Color subtleColor;
   final TextEditingController tagController;
-  final VoidCallback onAddTag;
+  final void Function({String? tagString}) onAddTag;
   final void Function(String) onRemoveTag;
 
   const _TagsSection({
@@ -462,10 +462,12 @@ class _TagsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const suggestedTags = ['Hisse', 'Kripto', 'Strateji', 'Alım-Satım', 'Hedef', 'Analiz'];
+    final availableSuggestions = suggestedTags.where((t) => !tags.contains(t)).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Existing tags
         if (tags.isNotEmpty)
           Wrap(
             spacing: 6,
@@ -506,7 +508,33 @@ class _TagsSection extends StatelessWidget {
 
         const SizedBox(height: 10),
 
-        // Add tag field
+        if (availableSuggestions.isNotEmpty) ...[
+          Text('Hızlı Etiketler', style: TextStyle(color: subtleColor, fontSize: 13)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: availableSuggestions.map((tag) {
+              return GestureDetector(
+                onTap: () => onAddTag(tagString: tag),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: textColor.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: textColor.withValues(alpha: 0.1)),
+                  ),
+                  child: Text(
+                    '+ $tag',
+                    style: TextStyle(fontSize: 12, color: textColor),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
@@ -533,7 +561,7 @@ class _TagsSection extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: onAddTag,
+                onTap: () => onAddTag(),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(

@@ -5,8 +5,17 @@ import 'package:finans_app/core/constants/api_constants.dart';
 import 'package:finans_app/data/models/market_price.dart';
 
 class MarketApiService {
+  // Son başarılı veri zamanını takip et (stale veri uyarısı için)
+  DateTime? _lastSuccessfulFetch;
+
+  bool get isDataStale {
+    if (_lastSuccessfulFetch == null) return true;
+    return DateTime.now().difference(_lastSuccessfulFetch!) >
+        const Duration(minutes: 20);
+  }
+
   // ─────────────────────────────────────────────────────────
-  // Piyasa Verileri
+  // Kategorize Piyasa Verileri (Backend / Yahoo Finance)
   // ─────────────────────────────────────────────────────────
 
   Future<Map<String, List<MarketPrice>>> fetchCategorizedMarkets() async {
@@ -15,77 +24,105 @@ class MarketApiService {
           .get(
             Uri.parse(
                 '${ApiConstants.baseUrl}${ApiConstants.categorizedMarketEndpoint}'),
+            headers: {'Accept': 'application/json'},
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        Map<String, List<MarketPrice>> result = {};
-        data.forEach((category, prices) {
-          result[category] =
-              (prices as List).map((p) => MarketPrice.fromJson(p, category)).toList();
+        final Map<String, dynamic> raw = json.decode(response.body);
+        final Map<String, List<MarketPrice>> result = {};
+
+        raw.forEach((category, prices) {
+          if (prices is List) {
+            final list = prices
+                .map((p) => MarketPrice.fromJson(
+                      p as Map<String, dynamic>,
+                      category,
+                    ))
+                .where((mp) => mp.currentPrice > 0) // Sıfır fiyatlı kayıtları ele
+                .toList();
+            if (list.isNotEmpty) {
+              result[category] = list;
+            }
+          }
         });
+
+        if (result.isNotEmpty) {
+          _lastSuccessfulFetch = DateTime.now();
+        }
         return result;
+      } else {
+        debugPrint(
+            'MarketApiService: Backend hata ${response.statusCode} - ${response.body}');
+        return {};
       }
-      return {};
-    } catch (e) {
-      debugPrint('Market API Service Error: $e');
+    } on Exception catch (e) {
+      debugPrint('MarketApiService fetchCategorizedMarkets exception: $e');
       return {};
     }
   }
 
-  Future<List<MarketPrice>> fetchBinancePrices() async {
-    const symbolsList = [
-      'BTCUSDT',
-      'ETHUSDT',
-      'BNBUSDT',
-      'SOLUSDT',
-      'XRPUSDT',
-      'ADAUSDT',
-      'DOGEUSDT',
-      'AVAXUSDT',
-      'DOTUSDT',
-      'LINKUSDT',
-    ];
+  // ─────────────────────────────────────────────────────────
+  // Binance Kripto Fiyatları (Doğrudan Binance API)
+  // ─────────────────────────────────────────────────────────
 
+  static const List<String> _cryptoSymbols = [
+    'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+    'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'LINKUSDT',
+    'MATICUSDT', 'LTCUSDT', 'UNIUSDT', 'ATOMUSDT', 'NEARUSDT',
+  ];
+
+  Future<List<MarketPrice>> fetchBinancePrices() async {
     try {
       final uri = Uri.parse(
-          'https://api.binance.com/api/v3/ticker/24hr?symbols=${Uri.encodeComponent(jsonEncode(symbolsList))}');
+        'https://api.binance.com/api/v3/ticker/24hr'
+        '?symbols=${Uri.encodeComponent(jsonEncode(_cryptoSymbols))}',
+      );
 
       final response =
           await http.get(uri).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) {
-          final symbol = item['symbol']?.toString() ?? '';
-          final cleanSymbol = symbol.replaceAll('USDT', '');
-          return MarketPrice(
-            id: 'binance_$symbol',
-            symbol: symbol,
-            name: cleanSymbol,
-            currentPrice:
-                double.tryParse(item['lastPrice']?.toString() ?? '0') ?? 0.0,
-            priceChange24h:
-                double.tryParse(item['priceChange']?.toString() ?? '0') ?? 0.0,
-            priceChangePercentage24h: double.tryParse(
-                    item['priceChangePercent']?.toString() ?? '0') ??
-                0.0,
-            dayHigh: double.tryParse(item['highPrice']?.toString() ?? '0'),
-            dayLow: double.tryParse(item['lowPrice']?.toString() ?? '0'),
-            volume: double.tryParse(item['volume']?.toString() ?? '0')?.toInt(),
-            category: 'crypto',
-            imageUrl:
-                'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${cleanSymbol.toLowerCase()}.png',
-          );
-        }).toList();
+        return data
+            .map((item) {
+              final symbol = item['symbol']?.toString() ?? '';
+              final cleanSymbol = symbol.replaceAll('USDT', '');
+              final price =
+                  double.tryParse(item['lastPrice']?.toString() ?? '') ?? 0.0;
+              if (price <= 0) return null;
+
+              return MarketPrice(
+                id: 'binance_$symbol',
+                symbol: symbol,
+                name: cleanSymbol,
+                currentPrice: price,
+                priceChange24h:
+                    double.tryParse(item['priceChange']?.toString() ?? '') ??
+                        0.0,
+                priceChangePercentage24h: double.tryParse(
+                        item['priceChangePercent']?.toString() ?? '') ??
+                    0.0,
+                dayHigh:
+                    double.tryParse(item['highPrice']?.toString() ?? ''),
+                dayLow:
+                    double.tryParse(item['lowPrice']?.toString() ?? ''),
+                volume: (double.tryParse(item['volume']?.toString() ?? ''))
+                    ?.toInt(),
+                category: 'crypto',
+                imageUrl:
+                    'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${cleanSymbol.toLowerCase()}.png',
+              );
+            })
+            .whereType<MarketPrice>()
+            .toList();
       } else {
         debugPrint(
             'Binance API Error: ${response.statusCode} - ${response.body}');
+        return [];
       }
-      return [];
-    } catch (e) {
-      debugPrint('Binance API Service Exception: $e');
+    } on Exception catch (e) {
+      debugPrint('fetchBinancePrices exception: $e');
       return [];
     }
   }
@@ -120,7 +157,7 @@ class MarketApiService {
 
       return response.statusCode == 201;
     } catch (e) {
-      debugPrint('Create Alarm Error: $e');
+      debugPrint('createAlarm error: $e');
       return false;
     }
   }
@@ -136,7 +173,7 @@ class MarketApiService {
           .timeout(const Duration(seconds: 10));
       return response.statusCode == 204;
     } catch (e) {
-      debugPrint('Delete Alarm Error: $e');
+      debugPrint('deleteAlarm error: $e');
       return false;
     }
   }
@@ -156,7 +193,7 @@ class MarketApiService {
       }
       return null;
     } catch (e) {
-      debugPrint('Toggle Alarm Error: $e');
+      debugPrint('toggleAlarm error: $e');
       return null;
     }
   }

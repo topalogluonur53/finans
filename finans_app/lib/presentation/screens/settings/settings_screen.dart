@@ -1,5 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:finans_app/core/theme/app_theme.dart';
+import 'package:finans_app/core/constants/api_constants.dart';
+import 'package:finans_app/data/providers/auth_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +23,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
+      appBar: AppBar(
+        title: const Text('Ayarlar'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -66,9 +81,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 _buildNavigationTile(
                   icon: Icons.lock_outline,
-                  title: 'Şifre İşlemleri',
-                  subtitle: 'Güvenliğinizi güncel tutun',
-                  onTap: () => _showChangePasswordDialog(),
+                  title: 'Şifre Değiştir',
+                  subtitle: 'Hesap şifrenizi güncelleyin',
+                  onTap: () => _showChangePasswordSheet(),
                 ),
               ],
             ),
@@ -120,11 +135,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: const Text('Ayarları Kaydet'),
               ),
             ),
+            const SizedBox(height: 80), // alt bar boşluk payı
           ],
         ),
       ),
     );
   }
+
+  // ─── Builders ──────────────────────────────────────────────────────────────
 
   Widget _buildSettingsCard(
       {required String title, required List<Widget> children}) {
@@ -160,14 +178,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(
-        title,
-        style: const TextStyle(color: AppTheme.textLight),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: AppTheme.textDim, fontSize: 12),
-      ),
+      title: Text(title, style: const TextStyle(color: AppTheme.textLight)),
+      subtitle: Text(subtitle,
+          style: const TextStyle(color: AppTheme.textDim, fontSize: 12)),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
@@ -184,15 +197,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(
-        title,
-        style: const TextStyle(color: AppTheme.textLight),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: AppTheme.textDim, fontSize: 12),
-      ),
-      trailing: const Icon(Icons.chevron_right, color: AppTheme.textDim),
+      title: Text(title, style: const TextStyle(color: AppTheme.textLight)),
+      subtitle: Text(subtitle,
+          style: const TextStyle(color: AppTheme.textDim, fontSize: 12)),
+      trailing:
+          const Icon(Icons.chevron_right, color: AppTheme.textDim),
       onTap: onTap,
     );
   }
@@ -206,131 +215,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(
-        title,
-        style: const TextStyle(color: AppTheme.textLight),
-      ),
+      title: Text(title, style: const TextStyle(color: AppTheme.textLight)),
       trailing: DropdownButton<String>(
         value: value,
         dropdownColor: AppTheme.surfaceDark,
         style: const TextStyle(color: AppTheme.textLight),
         underline: Container(),
         items: items.map((item) {
-          return DropdownMenuItem(
-            value: item,
-            child: Text(item),
-          );
+          return DropdownMenuItem(value: item, child: Text(item));
         }).toList(),
         onChanged: onChanged,
       ),
     );
   }
 
-  void _showChangePasswordDialog() {
-    final currentPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Şifre Değiştirme – Bottom Sheet (NumPad uyumlu)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-    showDialog(
+  void _showChangePasswordSheet() {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text(
-          'Şifre Değiştir',
-          style: TextStyle(color: AppTheme.textLight),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mevcut Şifre',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Yeni Şifre',
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Yeni Şifre (Tekrar)',
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child:
-                const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
-          ),
-          TextButton(
-            onPressed: () {
-              if (newPasswordController.text.isNotEmpty &&
-                  newPasswordController.text == confirmPasswordController.text) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Şifreniz başarıyla güncellendi'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Şifreler uyuşmuyor veya boş!'),
-                    backgroundColor: AppTheme.errorColor,
-                  ),
-                );
-              }
-            },
-            child: const Text('Değiştir',
-                style: TextStyle(color: AppTheme.primaryColor)),
-          ),
-        ],
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const _ChangePasswordSheet(),
     );
   }
+
+  // ─── Diğer dialoglar ───────────────────────────────────────────────────────
 
   void _showAboutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceDark,
-        title: const Text(
-          'Finans App',
-          style: TextStyle(color: AppTheme.textLight),
-        ),
+        title: const Text('Finans App',
+            style: TextStyle(color: AppTheme.textLight)),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Versiyon: 1.0.0',
-              style: TextStyle(color: AppTheme.textDim),
-            ),
+            Text('Versiyon: 1.0.0',
+                style: TextStyle(color: AppTheme.textDim)),
             SizedBox(height: 16),
             Text(
               'Finans App ile finansal durumunuzu kolayca takip edin. Portföy yönetimi, gelir-gider takibi, piyasa verileri ve daha fazlası...',
               style: TextStyle(color: AppTheme.textLight),
             ),
             SizedBox(height: 16),
-            Text(
-              '© 2026 Finans App. Tüm hakları saklıdır.',
-              style: TextStyle(color: AppTheme.textDim, fontSize: 12),
-            ),
+            Text('© 2026 Finans App. Tüm hakları saklıdır.',
+                style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
           ],
         ),
         actions: [
@@ -350,10 +284,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceDark,
-        title: const Text(
-          'Bize Ulaşın',
-          style: TextStyle(color: AppTheme.textLight),
-        ),
+        title: const Text('Bize Ulaşın',
+            style: TextStyle(color: AppTheme.textLight)),
         content: TextField(
           controller: messageController,
           maxLines: 4,
@@ -362,17 +294,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             hintText: 'Mesajınızı veya önerinizi yazın...',
             hintStyle: TextStyle(color: AppTheme.textDim),
             border: OutlineInputBorder(
-               borderSide: BorderSide(color: AppTheme.primaryColor),
-            ),
+                borderSide: BorderSide(color: AppTheme.primaryColor)),
             focusedBorder: OutlineInputBorder(
-               borderSide: BorderSide(color: AppTheme.primaryColor),
-            ),
+                borderSide: BorderSide(color: AppTheme.primaryColor)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal', style: TextStyle(color: AppTheme.textDim)),
+            child: const Text('İptal',
+                style: TextStyle(color: AppTheme.textDim)),
           ),
           TextButton(
             onPressed: () {
@@ -380,16 +311,384 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (messageController.text.isNotEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Mesajınız başarıyla iletildi. Teşekkür ederiz!'),
+                    content:
+                        Text('Mesajınız başarıyla iletildi. Teşekkür ederiz!'),
                     backgroundColor: Colors.green,
                   ),
                 );
               }
             },
-            child: const Text('Gönder', style: TextStyle(color: AppTheme.primaryColor)),
+            child: const Text('Gönder',
+                style: TextStyle(color: AppTheme.primaryColor)),
           ),
         ],
       ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Şifre Değiştirme Bottom Sheet – gerçek API ile
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ChangePasswordSheet extends StatefulWidget {
+  const _ChangePasswordSheet();
+
+  @override
+  State<_ChangePasswordSheet> createState() => _ChangePasswordSheetState();
+}
+
+class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentCtrl  = TextEditingController();
+  final _newCtrl      = TextEditingController();
+  final _confirmCtrl  = TextEditingController();
+
+  bool _showCurrent = false;
+  bool _showNew     = false;
+  bool _showConfirm = false;
+  bool _loading     = false;
+  String? _errorMsg;
+
+  @override
+  void dispose() {
+    _currentCtrl.dispose();
+    _newCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  // ─── API İsteği ────────────────────────────────────────────────────────────
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _loading = true; _errorMsg = null; });
+
+    final token = context.read<AuthProvider>().token;
+
+    // Demo modda API yoktur
+    if (token == 'offline_demo_token') {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showSuccess('Demo modda şifre değiştirilemez.');
+      return;
+    }
+
+    try {
+      final url = Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.changePasswordEndpoint}');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'current_password': _currentCtrl.text,
+          'new_password': _newCtrl.text,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(children: [
+              Icon(Icons.check_circle_outline, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Şifreniz başarıyla değiştirildi.'),
+            ]),
+            backgroundColor: Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12))),
+          ),
+        );
+      } else {
+        final body = jsonDecode(response.body);
+        setState(() {
+          _loading  = false;
+          _errorMsg = body['error'] ?? 'Bir hata oluştu.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading  = false;
+        _errorMsg = 'Sunucuya ulaşılamıyor.\nİnternet bağlantınızı kontrol edin.';
+      });
+    }
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.orange),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    return Container(
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 24,
+        bottom: mq.viewInsets.bottom + 32,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF1C2138),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Handle çizgisi ──────────────────────────────────────────
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // ── Başlık ──────────────────────────────────────────────────
+              Row(
+                children: [
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.lock_reset_rounded,
+                        color: AppTheme.primaryColor, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Şifre Değiştir',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700)),
+                      SizedBox(height: 2),
+                      Text('Hesap güvenliğinizi güncel tutun',
+                          style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+
+              // ── Hata mesajı ─────────────────────────────────────────────
+              if (_errorMsg != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded,
+                          color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(_errorMsg!,
+                            style: const TextStyle(
+                                color: Colors.redAccent, fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // ── Mevcut Şifre ────────────────────────────────────────────
+              _buildField(
+                controller: _currentCtrl,
+                label: 'Mevcut Şifre',
+                hint: 'Mevcut şifrenizi girin',
+                obscure: !_showCurrent,
+                toggleObscure: () =>
+                    setState(() => _showCurrent = !_showCurrent),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Bu alan zorunludur' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // ── Yeni Şifre ──────────────────────────────────────────────
+              _buildField(
+                controller: _newCtrl,
+                label: 'Yeni Şifre',
+                hint: 'En az 4 karakter',
+                obscure: !_showNew,
+                toggleObscure: () =>
+                    setState(() => _showNew = !_showNew),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Bu alan zorunludur';
+                  if (v.length < 4) return 'En az 4 karakter olmalıdır';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // ── Yeni Şifre Tekrar ───────────────────────────────────────
+              _buildField(
+                controller: _confirmCtrl,
+                label: 'Yeni Şifre (Tekrar)',
+                hint: 'Yeni şifrenizi tekrar girin',
+                obscure: !_showConfirm,
+                toggleObscure: () =>
+                    setState(() => _showConfirm = !_showConfirm),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Bu alan zorunludur';
+                  if (v != _newCtrl.text) return 'Şifreler uyuşmuyor';
+                  return null;
+                },
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 28),
+
+              // ── Butonlar ────────────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed:
+                          _loading ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white54,
+                        side: const BorderSide(color: Colors.white24),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('İptal'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _loading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            AppTheme.primaryColor.withValues(alpha: 0.4),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: _loading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Text('Değiştir',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15)),
+                              ],
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required bool obscure,
+    required VoidCallback toggleObscure,
+    required String? Function(String?) validator,
+    TextInputAction textInputAction = TextInputAction.next,
+    void Function(String)? onFieldSubmitted,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          obscureText: obscure,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onFieldSubmitted,
+          style: const TextStyle(color: Colors.white),
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.07),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                obscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: Colors.white38,
+                size: 20,
+              ),
+              onPressed: toggleObscure,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

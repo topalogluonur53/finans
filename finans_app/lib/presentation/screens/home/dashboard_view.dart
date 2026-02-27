@@ -10,6 +10,7 @@ import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart'
 import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
 import 'package:finans_app/presentation/widgets/finance_summary_card.dart';
+import 'package:finans_app/presentation/widgets/main_drawer.dart';
 
 class DashboardView extends StatelessWidget {
   final Function(int)? onNavigateToTab;
@@ -29,95 +30,65 @@ class DashboardView extends StatelessWidget {
         totalCost > 0 ? (totalPL / totalCost * 100) : 0.0;
     final bool isPLPositive = totalPL >= 0;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1200),
-        child: Column(
-          children: [
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
+      drawer: const MainDrawer(),
+      appBar: AppBar(
+        title: const Text('Finans Paneli'),
+        elevation: 2,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Column(
+            children: [
 
 
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await portfolio.fetchAssets();
-                },
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  children: [
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await portfolio.fetchAssets();
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                    children: [
 
+                      // ─── Quick Actions (en üstte) ──────────────────────────
+                      _QuickActionsSection(),
+                      const SizedBox(height: 16),
 
-                    // ─── Hero Total Balance Card ───────────────────────────
-                    _TotalBalanceCard(
-                      totalValue: totalValue,
-                      totalCost: totalCost,
-                      totalPL: totalPL,
-                      totalPLPercent: totalPLPercent,
-                      isPLPositive: isPLPositive,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ─── Quick Actions ─────────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ActionButton(
-                            icon: Icons.add_circle_outline,
-                            label: 'Varlık Ekle',
-                            color: AppTheme.primaryColor,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const AddAssetScreen()),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ActionButton(
-                            icon: Icons.arrow_upward_rounded,
-                            label: 'Gelir Ekle',
-                            color: AppTheme.secondaryColor,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const AddTransactionScreen(
-                                      type: TransactionType.income)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ActionButton(
-                            icon: Icons.arrow_downward_rounded,
-                            label: 'Gider Ekle',
-                            color: AppTheme.errorColor,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const AddTransactionScreen(
-                                      type: TransactionType.expense)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ─── Finance Summary ───────────────────────────────────
-                    GestureDetector(
-                      onTap: () => onNavigateToTab?.call(2),
-                      child: FinanceSummaryCard(
-                        totalIncome: finance.totalIncome,
-                        totalExpense: finance.totalExpense,
+                      // ─── Hero Total Balance Card ───────────────────────────
+                      _TotalBalanceCard(
+                        totalValue: totalValue,
+                        totalCost: totalCost,
+                        totalPL: totalPL,
+                        totalPLPercent: totalPLPercent,
+                        isPLPositive: isPLPositive,
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 20),
+
+                      // ─── Finance Summary ───────────────────────────────────
+                      GestureDetector(
+                        onTap: () => onNavigateToTab?.call(2),
+                        child: FinanceSummaryCard(
+                          totalIncome: finance.totalIncome,
+                          totalExpense: finance.totalExpense,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -262,6 +233,76 @@ class _StatChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Quick Actions Section ────────────────────────────────────────────────────
+
+class _QuickActionsSection extends StatelessWidget {
+  const _QuickActionsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
+          child: Text(
+            'Hızlı İşlemler',
+            style: TextStyle(
+              color: AppTheme.textLight,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.add_circle_outline,
+                label: 'Varlık Ekle',
+                color: AppTheme.primaryColor,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddAssetScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.arrow_upward_rounded,
+                label: 'Gelir Ekle',
+                color: AppTheme.secondaryColor,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AddTransactionScreen(
+                          type: TransactionType.income)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.arrow_downward_rounded,
+                label: 'Gider Ekle',
+                color: AppTheme.errorColor,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AddTransactionScreen(
+                          type: TransactionType.expense)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

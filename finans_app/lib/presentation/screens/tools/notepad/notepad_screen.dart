@@ -33,7 +33,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
                 autofocus: true,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  hintText: 'Notlarda ara...',
+                  hintText: 'Finansal notlarda ara...',
                   border: InputBorder.none,
                   fillColor: Colors.transparent,
                 ),
@@ -41,7 +41,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
                   context.read<NoteProvider>().setSearch(val);
                 },
               )
-            : const Text('Not Defteri'),
+            : const Text('Finansal Not Defteri'),
         actions: [
           IconButton(
             icon: Icon(_showSearch ? Icons.close : Icons.search),
@@ -151,14 +151,16 @@ class _NotepadScreenState extends State<NotepadScreen> {
                         Text(
                           noteProvider.searchQuery.isNotEmpty
                               ? 'Arama sonucu bulunamadı'
-                              : 'Henüz not eklenmemiş',
+                              : 'Henüz finansal notunuz veya işlem kaydınız bulunmuyor',
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                               fontSize: 18, color: AppTheme.textDim),
                         ),
                         const SizedBox(height: 8),
                         if (noteProvider.searchQuery.isEmpty)
                           const Text(
-                            'Yeni not eklemek için + butonuna dokunun',
+                            'Piyasa analizi, hedef fiyat veya stratejilerinizi not alın',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontSize: 13, color: AppTheme.textDim),
                           ),
@@ -195,8 +197,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
                 builder: (context) => const AddEditNoteScreen()),
           );
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Yeni Not'),
+        icon: const Icon(Icons.add_chart),
+        label: const Text('Finansal Not'),
         backgroundColor: AppTheme.primaryColor,
       ),
     );

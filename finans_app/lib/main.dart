@@ -6,9 +6,12 @@ import 'data/providers/auth_provider.dart';
 import 'data/providers/market_provider.dart';
 import 'data/providers/portfolio_provider.dart';
 import 'data/providers/finance_provider.dart';
+import 'data/providers/recurring_provider.dart';
 import 'data/providers/note_provider.dart';
+import 'data/providers/binance_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
+import 'presentation/screens/auth/lock_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/portfolio/portfolio_screen.dart';
 import 'presentation/screens/finance/finance_screen.dart';
@@ -20,6 +23,7 @@ import 'presentation/screens/tools/ipo_screen.dart';
 import 'presentation/screens/tools/notepad/notepad_screen.dart';
 import 'presentation/screens/market/market_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
+import 'presentation/widgets/inactivity_detector.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +32,39 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Uygulama lifecycle değişince çağrılır.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      // Arka plana geçince kilitle
+      context.read<AuthProvider>().lockScreen();
+    } else if (state == AppLifecycleState.resumed) {
+      // Ön plana dönünce; zaten kilitliyse LockScreen gösterilecek
+      // (ekstra bir şey yapmaya gerek yok)
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +80,12 @@ class MyApp extends StatelessWidget {
           create: (_) => FinanceProvider(),
           update: (_, auth, finance) => finance!..updateToken(auth.isAuthenticated ? auth.token : null),
         ),
+        ChangeNotifierProxyProvider<AuthProvider, RecurringProvider>(
+          create: (_) => RecurringProvider(),
+          update: (_, auth, recurring) => recurring!..updateToken(auth.isAuthenticated ? auth.token : null),
+        ),
         ChangeNotifierProvider(create: (_) => NoteProvider()),
+        ChangeNotifierProvider(create: (_) => BinanceProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
@@ -117,6 +157,17 @@ class MyApp extends StatelessWidget {
                 );
               }
               print('Main: Showing Application Shell');
+              // Kilit ekranı kontrolü
+              if (auth.isAuthenticated && auth.isLocked) {
+                return const LockScreen();
+              }
+              // Aktif ve giriş yapılmış — kullanıcı dokunuşlarını yakala
+              if (auth.isAuthenticated && !auth.isLocked) {
+                return InactivityDetector(
+                  onActivity: () => auth.resetInactivityTimer(),
+                  child: child!,
+                );
+              }
               return child!;
             },
             home: auth.isAuthenticated ? const HomeScreen() : const LoginScreen(),

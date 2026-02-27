@@ -56,6 +56,10 @@ class _ReceivablesScreenState extends State<ReceivablesScreen> {
         title: const Text('Alacaklarım'),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: _receivables.isEmpty
           ? Center(
@@ -74,7 +78,6 @@ class _ReceivablesScreenState extends State<ReceivablesScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Alacak ekleme
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Alacak ekleme özelliği eklenecek')),
           );

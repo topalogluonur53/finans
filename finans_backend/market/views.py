@@ -21,11 +21,20 @@ class MarketDataViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def categorized(self, request):
-        data = MarketData.objects.all()
+        all_data = MarketData.objects.all()
+
+        # Hisseler: is_index=False olanlar (bileşen hisseler)
+        stocks = all_data.filter(market_type='stock', is_index=False)
+        # Endeksler: is_index=True olanlar (BIST 100, S&P 500 vs.)
+        indexes = all_data.filter(market_type='stock', is_index=True)
+        commodities = all_data.filter(market_type='commodity')
+        currencies = all_data.filter(market_type='currency')
+
         result = {
-            'commodity': MarketDataSerializer(data.filter(market_type='commodity'), many=True).data,
-            'stock': MarketDataSerializer(data.filter(market_type='stock'), many=True).data,
-            'currency': MarketDataSerializer(data.filter(market_type='currency'), many=True).data,
+            'commodity': MarketDataSerializer(commodities, many=True).data,
+            'stock':     MarketDataSerializer(stocks,     many=True).data,
+            'index':     MarketDataSerializer(indexes,    many=True).data,
+            'currency':  MarketDataSerializer(currencies, many=True).data,
         }
         return Response(result)
 

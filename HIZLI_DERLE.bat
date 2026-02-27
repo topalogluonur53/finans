@@ -6,7 +6,7 @@ echo ========================================
 echo [1/3] Versiyon Guncelleniyor...
 echo ========================================
 set /a v=%RANDOM%
-powershell -Command "(gc finans_app/web/index.html) -replace 'flutter_bootstrap.js\?v=[\d.]+', 'flutter_bootstrap.js?v=%v%' | Out-File -encoding utf8 finans_app/web/index.html"
+python -c "import re; content = open('finans_app/web/index.html', 'r', encoding='utf-8-sig').read(); content = re.sub(r'flutter_bootstrap\.js\?v=[\d.]+', 'flutter_bootstrap.js?v=%v%', content); open('finans_app/web/index.html', 'w', encoding='utf-8', newline='').write(content)"
 echo Yeni Versiyon ID: %v%
 
 echo.
@@ -28,4 +28,5 @@ echo.
 echo Islem Tamamlandi! 
 echo Tarayicida 'Ctrl + F5' yaparak test edin.
 echo.
+start http://finans.onurtopaloglu.uk:8080
 pause

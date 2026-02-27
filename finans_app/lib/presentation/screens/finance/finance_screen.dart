@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
+import 'package:finans_app/presentation/screens/finance/recurring_screen.dart';
+import 'package:finans_app/presentation/widgets/main_drawer.dart';
+import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
+import 'package:finans_app/data/models/finance.dart';
 import 'package:intl/intl.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -19,12 +23,9 @@ class _FinanceScreenState extends State<FinanceScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    // Listen to tab changes to update FAB action
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {});
-      }
+      if (!_tabController.indexIsChanging) setState(() {});
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -40,41 +41,98 @@ class _FinanceScreenState extends State<FinanceScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Page Title Moved to HomeScreen App Bar
-        Container(
-          color: AppTheme.surfaceDark,
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: AppTheme.primaryColor,
-            labelColor: AppTheme.primaryColor,
-            unselectedLabelColor: AppTheme.textDim,
-            tabs: const [
-              Tab(text: 'Gelirler'),
-              Tab(text: 'Giderler'),
-            ],
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
+      drawer: const MainDrawer(),
+      appBar: AppBar(
+        title: const Text('Finans Yönetimi'),
+        elevation: 2,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         ),
-        Expanded(
-          child: Consumer<FinanceProvider>(
-            builder: (context, finance, child) {
-              if (finance.isLoading &&
-                  (finance.incomes.isEmpty && finance.expenses.isEmpty)) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: AppTheme.surfaceDark,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: AppTheme.primaryColor,
+              labelColor: AppTheme.primaryColor,
+              unselectedLabelColor: AppTheme.textDim,
+              labelStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              tabs: const [
+                Tab(text: 'Gelirler'),
+                Tab(text: 'Giderler'),
+                Tab(text: 'Sabit'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Consumer<FinanceProvider>(
+              builder: (context, finance, child) {
+                if (finance.isLoading &&
+                    finance.incomes.isEmpty &&
+                    finance.expenses.isEmpty &&
+                    _tabController.index != 2) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              return TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildIncomeList(finance),
-                  _buildExpenseList(finance),
-                ],
-              );
-            },
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildIncomeList(finance),
+                    _buildExpenseList(finance),
+                    // ── Sabit Gelir/Gider ─────────────────────────────────────
+                    const RecurringScreen(),
+                  ],
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+      floatingActionButton: _tabController.index == 0
+          ? FloatingActionButton.extended(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AddTransactionScreen(
+                        type: TransactionType.income)),
+              ),
+              label: const Text('Gelir Ekle', style: TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+              backgroundColor: Colors.green.shade500,
+            )
+          : _tabController.index == 1
+              ? FloatingActionButton.extended(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AddTransactionScreen(
+                            type: TransactionType.expense)),
+                  ),
+                  label: const Text('Gider Ekle', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.arrow_downward_rounded, color: Colors.white),
+                  backgroundColor: Colors.red.shade500,
+                )
+              : FloatingActionButton.extended(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const AddRecurringSheet(initialType: 'EXPENSE'),
+                    );
+                  },
+                  label: const Text('Sabit İşlem Ekle', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                  backgroundColor: AppTheme.primaryColor,
+                ),
     );
   }
 
@@ -86,7 +144,7 @@ class _FinanceScreenState extends State<FinanceScreen>
       onRefresh: () => finance.fetchIncomes(),
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 8),
-        itemCount: finance.incomes.length + 1, // +1 for summary header
+        itemCount: finance.incomes.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             return _buildSummaryHeader(
@@ -192,7 +250,7 @@ class _FinanceScreenState extends State<FinanceScreen>
       onRefresh: () => finance.fetchExpenses(),
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 8),
-        itemCount: finance.expenses.length + 1, // +1 for summary header
+        itemCount: finance.expenses.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             return _buildSummaryHeader(
@@ -341,3 +399,4 @@ class _FinanceScreenState extends State<FinanceScreen>
     );
   }
 }
+

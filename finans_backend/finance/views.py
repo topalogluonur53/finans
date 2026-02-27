@@ -1,6 +1,6 @@
-from rest_framework import viewsets, permissions, status
-from .models import Income, Expense, Budget
-from .serializers import IncomeSerializer, ExpenseSerializer, BudgetSerializer
+from rest_framework import viewsets, permissions
+from .models import Income, Expense, Budget, RecurringTransaction
+from .serializers import IncomeSerializer, ExpenseSerializer, BudgetSerializer, RecurringTransactionSerializer
 
 class IncomeViewSet(viewsets.ModelViewSet):
     serializer_class = IncomeSerializer
@@ -28,6 +28,17 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class RecurringTransactionViewSet(viewsets.ModelViewSet):
+    serializer_class = RecurringTransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return RecurringTransaction.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

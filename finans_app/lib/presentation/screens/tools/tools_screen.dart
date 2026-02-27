@@ -3,66 +3,82 @@ import 'package:finans_app/presentation/screens/tools/notepad/notepad_screen.dar
 import 'package:finans_app/presentation/screens/tools/loan_calculator_screen.dart';
 import 'package:finans_app/presentation/screens/tools/currency_converter_screen.dart';
 import 'package:finans_app/presentation/screens/tools/ipo_screen.dart';
+import 'package:finans_app/presentation/widgets/main_drawer.dart';
+import 'package:finans_app/core/theme/app_theme.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _ToolCard(
-          title: 'Halka Arz (IPO)',
-          icon: Icons.trending_up,
-          subtitle: 'Yaklaşan ve son halka arzlar',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const IPOScreen()),
-            );
-          },
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
+      drawer: const MainDrawer(),
+      appBar: AppBar(
+        title: const Text('Finansal Araçlar'),
+        elevation: 2,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
-        const SizedBox(height: 16),
-        _ToolCard(
-          title: 'Not Defteri',
-          icon: Icons.note_alt,
-          subtitle: 'Notlarınızı kaydedin',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const NotepadScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        _ToolCard(
-          title: 'Kredi Hesaplama',
-          icon: Icons.calculate,
-          subtitle: 'Taksit ve faiz hesaplayın',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const LoanCalculatorScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        _ToolCard(
-          title: 'Döviz Çevirici',
-          icon: Icons.currency_exchange,
-          subtitle: 'Anlık kur ile çevirin',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const CurrencyConverterScreen()),
-            );
-          },
-        ),
-        // More tools
-      ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _ToolCard(
+            title: 'Halka Arz (IPO)',
+            icon: Icons.trending_up,
+            subtitle: 'Yaklaşan ve son halka arzlar',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const IPOScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          _ToolCard(
+            title: 'Finansal Notlar',
+            icon: Icons.analytics_outlined,
+            subtitle: 'Hedef ve analizlerinizi kaydedin',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotepadScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          _ToolCard(
+            title: 'Kredi Hesaplama',
+            icon: Icons.calculate,
+            subtitle: 'Taksit ve faiz hesaplayın',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const LoanCalculatorScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          _ToolCard(
+            title: 'Döviz Çevirici',
+            icon: Icons.currency_exchange,
+            subtitle: 'Anlık kur ile çevirin',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const CurrencyConverterScreen()),
+              );
+            },
+          ),
+          // More tools
+        ],
+      ),
     );
   }
 }

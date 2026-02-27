@@ -1,15 +1,21 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:finans_app/data/models/market_price.dart';
 
+/// CoinGecko üzerinden kripto, emtia ve döviz verilerini çeker.
+/// NOT: Hisse (borsa) verileri artık backend'den (MarketApiService) alınıyor.
 class CoinGeckoService {
-  static const String _baseUrlValue = 'https://api.coingecko.com/api/v3';
+  static const String _baseUrl = 'https://api.coingecko.com/api/v3';
+  static const String _fxApiUrl = 'https://api.exchangerate-api.com/v4/latest/USD';
 
   static final Map<String, dynamic> _cache = {};
   static final Map<String, DateTime> _cacheTime = {};
-  static const Duration _cacheDuration = Duration(minutes: 1);
+  static const Duration _cacheDuration = Duration(minutes: 2);
+
+  // ─────────────────────────────────────────────────────────
+  // Önbellek Yardımcıları
+  // ─────────────────────────────────────────────────────────
 
   bool _isCacheValid(String key) {
     if (!_cache.containsKey(key)) return false;
@@ -23,17 +29,62 @@ class CoinGeckoService {
     _cacheTime[key] = DateTime.now();
   }
 
-  Future<List<MarketPrice>> fetchCryptoPrices() async {
-    const cacheKey = 'crypto_prices';
-    if (_isCacheValid(cacheKey)) return _cache[cacheKey];
+  T? _getCached<T>(String key) {
+    if (_isCacheValid(key)) return _cache[key] as T?;
+    return null;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // USD/TRY Kuru
+  // ─────────────────────────────────────────────────────────
+
+  Future<Map<String, double>> _fetchFxRates() async {
+    const cacheKey = 'fx_rates';
+    final cached = _getCached<Map<String, double>>(cacheKey);
+    if (cached != null) return cached;
 
     try {
       final response = await http
-          .get(
-            Uri.parse(
-                '$_baseUrlValue/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'),
-          )
+          .get(Uri.parse(_fxApiUrl))
           .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final rawRates = data['rates'] as Map<String, dynamic>? ?? {};
+        final rates = rawRates.map(
+          (k, v) => MapEntry(k, (v as num).toDouble()),
+        );
+        _updateCache(cacheKey, rates);
+        return rates;
+      }
+    } catch (e) {
+      debugPrint('FX Rates fetch error: $e');
+    }
+
+    // Önbellekte eski veri varsa onu kullan
+    return _cache[cacheKey] as Map<String, double>? ?? {'TRY': 43.75};
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Kripto Fiyatları (CoinGecko)
+  // ─────────────────────────────────────────────────────────
+
+  Future<List<MarketPrice>> fetchCryptoPrices() async {
+    const cacheKey = 'crypto_prices';
+    final cached = _getCached<List<MarketPrice>>(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      final response = await http
+          .get(Uri.parse(
+            '$_baseUrl/coins/markets'
+            '?vs_currency=usd'
+            '&order=market_cap_desc'
+            '&per_page=50'
+            '&page=1'
+            '&sparkline=false',
+          ))
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -44,72 +95,63 @@ class CoinGeckoService {
 
         _updateCache(cacheKey, result);
         return result;
+      } else if (response.statusCode == 429) {
+        debugPrint('CoinGecko rate limit: 429, önbellek döndürülüyor.');
+      } else {
+        debugPrint('CoinGecko error: ${response.statusCode}');
       }
-      if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
-      return [];
     } catch (e) {
-      debugPrint('Error fetching crypto prices: $e');
-      return _cache[cacheKey] ?? [];
+      debugPrint('fetchCryptoPrices error: $e');
     }
+
+    return _cache[cacheKey] as List<MarketPrice>? ?? [];
   }
+
+  // ─────────────────────────────────────────────────────────
+  // Emtia Fiyatları (CoinGecko PAXG + hesaplama)
+  // ─────────────────────────────────────────────────────────
 
   Future<List<MarketPrice>> fetchCommodityPrices() async {
     const cacheKey = 'commodity_prices';
-    if (_isCacheValid(cacheKey)) return _cache[cacheKey];
+    final cached = _getCached<List<MarketPrice>>(cacheKey);
+    if (cached != null) return cached;
 
-    double tryRate = 43.75;
+    final fxRates = await _fetchFxRates();
+    final double tryRate = fxRates['TRY'] ?? 43.75;
+
     double ounceGold = 2750.0;
     double ounceSilver = 32.50;
-    double goldChangePercent = 0.45;
-    double silverChangePercent = -0.12;
+    double goldChangePercent = 0.0;
+    double silverChangePercent = 0.0;
 
     try {
-      try {
-        final fxResponse = await http
-            .get(Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'))
-            .timeout(const Duration(seconds: 5));
-        if (fxResponse.statusCode == 200) {
-          final fxData = json.decode(fxResponse.body);
-          if (fxData['rates'] != null && fxData['rates']['TRY'] != null) {
-            tryRate = fxData['rates']['TRY'].toDouble();
-          }
+      // PAXG ≈ Ons Altın, XAUT de alternatif. Silver token: "tether-gold" vs
+      final response = await http
+          .get(Uri.parse(
+            '$_baseUrl/coins/markets'
+            '?vs_currency=usd'
+            '&ids=pax-gold,tether-gold'
+            '&sparkline=false',
+          ))
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final goldData = data.firstWhere(
+          (e) => e['id'] == 'pax-gold' || e['id'] == 'tether-gold',
+          orElse: () => null,
+        );
+        if (goldData != null) {
+          ounceGold = (goldData['current_price'] as num?)?.toDouble() ?? ounceGold;
+          goldChangePercent =
+              (goldData['price_change_percentage_24h'] as num?)?.toDouble() ?? 0.0;
         }
-      } catch (e) {
-        debugPrint('FX Rate fetch error: $e');
-      }
-
-      try {
-        final response = await http
-            .get(
-              Uri.parse(
-                  '$_baseUrlValue/coins/markets?vs_currency=usd&ids=pax-gold,silver-tokenized-stock-defichain&sparkline=false'),
-            )
-            .timeout(const Duration(seconds: 10));
-
-        if (response.statusCode == 200) {
-          final List<dynamic> data = json.decode(response.body);
-          final goldData =
-              data.firstWhere((e) => e['id'] == 'pax-gold', orElse: () => null);
-          final silverData = data.firstWhere(
-              (e) => e['id'] == 'silver-tokenized-stock-defichain',
-              orElse: () => null);
-
-          if (goldData != null) {
-            ounceGold = (goldData['current_price'] ?? 2750.0).toDouble();
-            goldChangePercent =
-                (goldData['price_change_percentage_24h'] ?? 0.45).toDouble();
-          }
-          if (silverData != null) {
-            ounceSilver = (silverData['current_price'] ?? 32.50).toDouble();
-            silverChangePercent =
-                (silverData['price_change_percentage_24h'] ?? -0.12).toDouble();
-          }
-        }
-      } catch (e) {
-        debugPrint('CoinGecko fetch error: $e');
       }
     } catch (e) {
-      debugPrint('Commodity logic error: $e');
+      debugPrint('Commodity CoinGecko fetch error: $e');
+      // Önbellekte eski veri varsa döndür
+      final old = _cache[cacheKey] as List<MarketPrice>?;
+      if (old != null) return old;
     }
 
     final double gramGold = (ounceGold / 31.1034) * tryRate;
@@ -118,7 +160,7 @@ class CoinGeckoService {
     final result = [
       MarketPrice(
         id: 'gram-altin',
-        symbol: 'AU/TRY',
+        symbol: 'GRAM-ALTIN',
         name: 'Gram Altın',
         currentPrice: gramGold,
         priceChange24h: gramGold * (goldChangePercent / 100),
@@ -127,7 +169,7 @@ class CoinGeckoService {
       ),
       MarketPrice(
         id: 'gram-gumus',
-        symbol: 'AG/TRY',
+        symbol: 'GRAM-GUMUS',
         name: 'Gram Gümüş',
         currentPrice: gramSilver,
         priceChange24h: gramSilver * (silverChangePercent / 100),
@@ -135,17 +177,8 @@ class CoinGeckoService {
         category: 'commodity',
       ),
       MarketPrice(
-        id: 'altin-gumus-rasyosu',
-        symbol: 'AU/AG',
-        name: 'Altın/Gümüş Rasyosu',
-        currentPrice: ounceSilver > 0 ? (ounceGold / ounceSilver) : 0,
-        priceChange24h: 0,
-        priceChangePercentage24h: goldChangePercent - silverChangePercent,
-        category: 'commodity',
-      ),
-      MarketPrice(
         id: 'ons-altin',
-        symbol: 'AU/USD',
+        symbol: 'GC=F',
         name: 'Ons Altın',
         currentPrice: ounceGold,
         priceChange24h: ounceGold * (goldChangePercent / 100),
@@ -154,7 +187,7 @@ class CoinGeckoService {
       ),
       MarketPrice(
         id: 'ons-gumus',
-        symbol: 'AG/USD',
+        symbol: 'SI=F',
         name: 'Ons Gümüş',
         currentPrice: ounceSilver,
         priceChange24h: ounceSilver * (silverChangePercent / 100),
@@ -163,10 +196,10 @@ class CoinGeckoService {
       ),
       MarketPrice(
         id: 'ceyrek-altin',
-        symbol: 'CEYREK',
+        symbol: 'CEYREK-ALTIN',
         name: 'Çeyrek Altın',
-        currentPrice: gramGold * 1.635,
-        priceChange24h: (gramGold * 1.635) * (goldChangePercent / 100),
+        currentPrice: gramGold * 1.75 * 0.916,
+        priceChange24h: (gramGold * 1.75 * 0.916) * (goldChangePercent / 100),
         priceChangePercentage24h: goldChangePercent,
         category: 'commodity',
       ),
@@ -176,176 +209,141 @@ class CoinGeckoService {
     return result;
   }
 
+  // ─────────────────────────────────────────────────────────
+  // Döviz Kurları (ExchangeRate API — GERÇEK değişim hesabı)
+  // ─────────────────────────────────────────────────────────
+
   Future<List<MarketPrice>> fetchCurrencyRates() async {
     const cacheKey = 'currency_rates';
-    if (_isCacheValid(cacheKey)) return _cache[cacheKey];
+    const prevKey = 'currency_rates_prev';
+    final cached = _getCached<List<MarketPrice>>(cacheKey);
+    if (cached != null) return cached;
 
     try {
+      // Güncel kur
       final response = await http
-          .get(
-            Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'),
-          )
+          .get(Uri.parse(_fxApiUrl))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        final Map<String, dynamic> rates = data['rates'] ?? {};
-        final double tryRate = (rates['TRY'] ?? 43.75).toDouble();
-        final double eurRate = (rates['EUR'] ?? 0.90).toDouble();
-        final double gbpRate = (rates['GBP'] ?? 0.77).toDouble();
-        final double jpyRate = (rates['JPY'] ?? 145.0).toDouble();
-        final double chfRate = (rates['CHF'] ?? 0.85).toDouble();
+        final rates = (data['rates'] as Map<String, dynamic>? ?? {})
+            .map((k, v) => MapEntry(k, (v as num).toDouble()));
+
+        final double tryRate = rates['TRY'] ?? 43.75;
+        final double eurRate = rates['EUR'] ?? 0.92;
+        final double gbpRate = rates['GBP'] ?? 0.79;
+        final double jpyRate = rates['JPY'] ?? 149.0;
+        final double chfRate = rates['CHF'] ?? 0.89;
+
+        // Hesapla: 1 birim yabancı para = kaç TL
+        final usdTry  = tryRate;
+        final eurTry  = (1 / eurRate) * tryRate;
+        final gbpTry  = (1 / gbpRate) * tryRate;
+        final jpyTry  = (1 / jpyRate) * tryRate;
+        final chfTry  = (1 / chfRate) * tryRate;
+        final eurUsd  = 1 / eurRate;
+
+        // Önceki kur verisi önbellekte varsa yüzde değişimi hesapla
+        final prev = _cache[prevKey] as Map<String, double>?;
+        double chg(double cur, String k) {
+          if (prev == null || prev[k] == null || prev[k] == 0) return 0.0;
+          return ((cur - prev[k]!) / prev[k]!) * 100;
+        }
+
+        // Şimdiki değerleri yarın için önceki değer olarak sakla
+        _cache[prevKey] = {
+          'usdTry': usdTry,
+          'eurTry': eurTry,
+          'gbpTry': gbpTry,
+          'jpyTry': jpyTry,
+          'chfTry': chfTry,
+          'eurUsd': eurUsd,
+        };
 
         final result = [
           MarketPrice(
             id: 'usd-try',
-            symbol: 'USD/TRY',
+            symbol: 'USDTRY=X',
             name: 'Amerikan Doları',
-            currentPrice: tryRate,
-            priceChange24h: 0.12,
-            priceChangePercentage24h: 0.28,
+            currentPrice: usdTry,
+            priceChange24h: prev != null ? (usdTry - (prev['usdTry'] ?? usdTry)) : 0.0,
+            priceChangePercentage24h: chg(usdTry, 'usdTry'),
             category: 'currency',
           ),
           MarketPrice(
             id: 'eur-try',
-            symbol: 'EUR/TRY',
+            symbol: 'EURTRY=X',
             name: 'Euro',
-            currentPrice: (1 / eurRate) * tryRate,
-            priceChange24h: 0.15,
-            priceChangePercentage24h: 0.32,
+            currentPrice: eurTry,
+            priceChange24h: prev != null ? (eurTry - (prev['eurTry'] ?? eurTry)) : 0.0,
+            priceChangePercentage24h: chg(eurTry, 'eurTry'),
             category: 'currency',
           ),
           MarketPrice(
             id: 'gbp-try',
-            symbol: 'GBP/TRY',
+            symbol: 'GBPTRY=X',
             name: 'İngiliz Sterlini',
-            currentPrice: (1 / gbpRate) * tryRate,
-            priceChange24h: 0.18,
-            priceChangePercentage24h: 0.35,
+            currentPrice: gbpTry,
+            priceChange24h: prev != null ? (gbpTry - (prev['gbpTry'] ?? gbpTry)) : 0.0,
+            priceChangePercentage24h: chg(gbpTry, 'gbpTry'),
             category: 'currency',
           ),
           MarketPrice(
             id: 'jpy-try',
-            symbol: 'JPY/TRY',
+            symbol: 'JPYTRY=X',
             name: 'Japon Yeni',
-            currentPrice: (1 / jpyRate) * tryRate,
-            priceChange24h: 0.01,
-            priceChangePercentage24h: 0.05,
+            currentPrice: jpyTry,
+            priceChange24h: prev != null ? (jpyTry - (prev['jpyTry'] ?? jpyTry)) : 0.0,
+            priceChangePercentage24h: chg(jpyTry, 'jpyTry'),
             category: 'currency',
           ),
           MarketPrice(
             id: 'chf-try',
-            symbol: 'CHF/TRY',
+            symbol: 'CHFTRY=X',
             name: 'İsviçre Frangı',
-            currentPrice: (1 / chfRate) * tryRate,
-            priceChange24h: 0.03,
-            priceChangePercentage24h: 0.10,
+            currentPrice: chfTry,
+            priceChange24h: prev != null ? (chfTry - (prev['chfTry'] ?? chfTry)) : 0.0,
+            priceChangePercentage24h: chg(chfTry, 'chfTry'),
+            category: 'currency',
+          ),
+          MarketPrice(
+            id: 'eur-usd',
+            symbol: 'EURUSD=X',
+            name: 'Euro/Dolar',
+            currentPrice: eurUsd,
+            priceChange24h: prev != null ? (eurUsd - (prev['eurUsd'] ?? eurUsd)) : 0.0,
+            priceChangePercentage24h: chg(eurUsd, 'eurUsd'),
             category: 'currency',
           ),
         ];
+
         _updateCache(cacheKey, result);
         return result;
       }
-      return _cache[cacheKey] ?? [];
     } catch (e) {
-      debugPrint('Error fetching currency rates: $e');
-      return _cache[cacheKey] ?? [];
+      debugPrint('fetchCurrencyRates error: $e');
     }
+
+    return _cache[cacheKey] as List<MarketPrice>? ?? [];
   }
 
-  Future<List<MarketPrice>> fetchStockPrices() async {
-    final stocks = [
-      {
-        'id': 'bist100',
-        'symbol': 'XU100',
-        'name': 'BIST 100',
-        'price': 14442.35
-      },
-      {
-        'id': 'thyao',
-        'symbol': 'THYAO',
-        'name': 'Türk Hava Yolları',
-        'price': 342.50
-      },
-      {
-        'id': 'garan',
-        'symbol': 'GARAN',
-        'name': 'Garanti Bankası',
-        'price': 118.30
-      },
-      {'id': 'eregl', 'symbol': 'EREGL', 'name': 'Erdemir', 'price': 52.10},
-      {'id': 'asels', 'symbol': 'ASELS', 'name': 'Aselsan', 'price': 78.75},
-      {'id': 'sise', 'symbol': 'SISE', 'name': 'Şişecam', 'price': 58.20},
-      {'id': 'tupRS', 'symbol': 'TUPRS', 'name': 'Tüpraş', 'price': 185.40},
-      {
-        'id': 'kchol',
-        'symbol': 'KCHOL',
-        'name': 'Koç Holding',
-        'price': 245.80
-      },
-      {
-        'id': 'bimas',
-        'symbol': 'BIMAS',
-        'name': 'BİM Birleşik Mağazalar',
-        'price': 485.00
-      },
-      {
-        'id': 'isCTR',
-        'symbol': 'ISCTR',
-        'name': 'İş Bankası (C)',
-        'price': 15.40
-      },
-      {'id': 'akbnk', 'symbol': 'AKBNK', 'name': 'Akbank', 'price': 65.20},
-      {
-        'id': 'sahol',
-        'symbol': 'SAHOL',
-        'name': 'Sabancı Holding',
-        'price': 98.40
-      },
-      {
-        'id': 'froto',
-        'symbol': 'FROTO',
-        'name': 'Ford Otosan',
-        'price': 1250.00
-      },
-    ];
-
-    final random = Random();
-    return stocks.map((s) {
-      final changePercent = (random.nextDouble() * 3) - 1.2;
-      final currentPrice = (s['price'] as double);
-      return MarketPrice(
-        id: s['id'] as String,
-        symbol: s['symbol'] as String,
-        name: s['name'] as String,
-        currentPrice: currentPrice,
-        priceChange24h: currentPrice * (changePercent / 100),
-        priceChangePercentage24h: changePercent,
-        category: 'stock',
-      );
-    }).toList();
-  }
+  // ─────────────────────────────────────────────────────────
+  // fetchAllMarkets (crypto + emtia + döviz)
+  // Hisseler backend'den geliyor, burada yok.
+  // ─────────────────────────────────────────────────────────
 
   Future<Map<String, List<MarketPrice>>> fetchAllMarkets() async {
-    final cryptoFuture = fetchCryptoPrices().catchError((_) => <MarketPrice>[]);
-    final commodityFuture =
-        fetchCommodityPrices().catchError((_) => <MarketPrice>[]);
-    final currencyFuture =
-        fetchCurrencyRates().catchError((_) => <MarketPrice>[]);
-    final stockFuture = fetchStockPrices().catchError((_) => <MarketPrice>[]);
-
     final results = await Future.wait([
-      cryptoFuture,
-      commodityFuture,
-      currencyFuture,
-      stockFuture,
+      fetchCryptoPrices().catchError((_) => <MarketPrice>[]),
+      fetchCommodityPrices().catchError((_) => <MarketPrice>[]),
+      fetchCurrencyRates().catchError((_) => <MarketPrice>[]),
     ]);
 
     return {
-      'crypto': results[0],
+      'crypto':    results[0],
       'commodity': results[1],
-      'currency': results[2],
-      'stock': results[3],
+      'currency':  results[2],
     };
   }
 }

@@ -34,6 +34,9 @@ class _LoginScreenState extends State<LoginScreen>
   final FocusNode _passwordFocusNode = FocusNode();
   final int _pinLength = 6;
 
+  // ── Klavye dinleyici (web/PC sayısal tuşlar) ──────────────────────────────
+  final FocusNode _keyListenerFocus = FocusNode();
+
   // ── NumPad state ──────────────────────────────────────────────────────────
   _ActiveField _activeField = _ActiveField.none;
 
@@ -74,7 +77,53 @@ class _LoginScreenState extends State<LoginScreen>
     _passwordController.dispose();
     _passwordFocusNode.dispose();
     _numPadAnim.dispose();
+    _keyListenerFocus.dispose();
     super.dispose();
+  }
+
+  // ── PC/Web klavye sayısal tuş girişi ─────────────────────────────────────
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (!_numPadVisible) return KeyEventResult.ignored;
+
+    final numKeys = {
+      LogicalKeyboardKey.digit0: '0',
+      LogicalKeyboardKey.digit1: '1',
+      LogicalKeyboardKey.digit2: '2',
+      LogicalKeyboardKey.digit3: '3',
+      LogicalKeyboardKey.digit4: '4',
+      LogicalKeyboardKey.digit5: '5',
+      LogicalKeyboardKey.digit6: '6',
+      LogicalKeyboardKey.digit7: '7',
+      LogicalKeyboardKey.digit8: '8',
+      LogicalKeyboardKey.digit9: '9',
+      LogicalKeyboardKey.numpad0: '0',
+      LogicalKeyboardKey.numpad1: '1',
+      LogicalKeyboardKey.numpad2: '2',
+      LogicalKeyboardKey.numpad3: '3',
+      LogicalKeyboardKey.numpad4: '4',
+      LogicalKeyboardKey.numpad5: '5',
+      LogicalKeyboardKey.numpad6: '6',
+      LogicalKeyboardKey.numpad7: '7',
+      LogicalKeyboardKey.numpad8: '8',
+      LogicalKeyboardKey.numpad9: '9',
+    };
+
+    final key = event.logicalKey;
+    if (numKeys.containsKey(key)) {
+      _onKey(numKeys[key]!);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
+      _onBackspace();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      _closeNumPad();
+      Future.delayed(const Duration(milliseconds: 320), _login);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   Future<void> _loadRememberMe() async {
@@ -90,8 +139,6 @@ class _LoginScreenState extends State<LoginScreen>
           _actualUsername = savedUser;
           _usernameController.text = savedDisplayName.isNotEmpty ? savedDisplayName : savedUser;
           _usernameIsNumeric = false;
-          // Eğer kaydedilmiş bir kullanıcı varsa doğrudan şifre sormak için şifre alanını aç.
-          Future.delayed(const Duration(milliseconds: 300), () => _openNumPad(_ActiveField.password));
         }
       });
     }
@@ -117,6 +164,10 @@ class _LoginScreenState extends State<LoginScreen>
     HapticFeedback.mediumImpact();
     setState(() => _activeField = field);
     _numPadAnim.forward();
+    // Klavye dinleyicisine fokus ver
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (mounted) _keyListenerFocus.requestFocus();
+    });
   }
 
   void _closeNumPad() {
@@ -128,15 +179,24 @@ class _LoginScreenState extends State<LoginScreen>
   bool get _numPadVisible => _activeField != _ActiveField.none;
 
   // ── Tuş girişi ────────────────────────────────────────────────────────────
+  // Kullanıcı adı: 10 haneli telefon (5368977153) veya 11 haneli TCKN desteklenir.
+  // 10 ya da 11 hane girilince otomatik şifre alanına geçilir.
+  static const int _maxUsernameLength = 15;
+
   void _onKey(String digit) {
-    HapticFeedback.heavyImpact();
+    HapticFeedback.lightImpact();
     if (_activeField == _ActiveField.username && _usernameIsNumeric) {
       final current = _usernameController.text;
-      if (current.length < 11) {
+      if (current.length < _maxUsernameLength) {
         setState(() => _usernameController.text = current + digit);
-        if (_usernameController.text.length == 11) {
-          _closeNumPad();
-          Future.delayed(const Duration(milliseconds: 300), () => _openNumPad(_ActiveField.password));
+        final newLen = _usernameController.text.length;
+        // 10 haneli telefon veya 11 haneli TCKN → otomatik şifreye geç
+        if (newLen == 10 || newLen == 11) {
+          Future.delayed(const Duration(milliseconds: 150), () {
+            if (mounted && _activeField == _ActiveField.username) {
+              setState(() => _activeField = _ActiveField.password);
+            }
+          });
         }
       }
     } else if (_activeField == _ActiveField.password) {
@@ -151,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _onBackspace() {
-    HapticFeedback.mediumImpact();
+    HapticFeedback.selectionClick();
     if (_activeField == _ActiveField.username && _usernameIsNumeric) {
       final t = _usernameController.text;
       if (t.isNotEmpty) {
@@ -163,33 +223,120 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _login() async {
+    if (!mounted) return;
     final loginUsername = _actualUsername ?? _usernameController.text.trim().replaceAll(' ', '');
     
     if (loginUsername.isEmpty) {
-      _showSnack('Lütfen müşteri no / kullanıcı adınızı girin.', isError: false);
-      setState(() => _passwordController.clear());
+      _showSnack('Lutfen kullanıcı adınızı girin.', isError: false);
+      _openNumPad(_ActiveField.username);
       return;
     }
-
-
 
     if (_passwordController.text.isEmpty) {
       _showSnack('Lütfen şifrenizi girin.', isError: false);
+      _openNumPad(_ActiveField.password);
       return;
     }
+
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (auth.isLoading) return; // Çifte gönderimi önle
+
     try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
       await auth.login(loginUsername, _passwordController.text);
           
       if (loginUsername.toLowerCase() != 'demo') {
         await _saveRememberMe(auth);
       }
+    } on LoginException catch (e) {
+      // AuthProvider'dan gelen özel hata
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      setState(() => _passwordController.clear());
+      _showLoginError(e.message, e.type);
+      // Numpad'i yeniden aç – kullanıcı PIN'i tekrar girebilsin
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) _openNumPad(_ActiveField.password);
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() => _passwordController.clear());
-        _showSnack('Hatalı müşteri no veya şifre.', isError: true);
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      setState(() => _passwordController.clear());
+      final msg = e.toString();
+      if (msg.contains('Connection') || msg.contains('SocketException') || msg.contains('TimeoutException')) {
+        _showLoginError('Sunucuya bağlaglanılamıyor.\nLutfen internet bağlantınızı kontrol edin.', LoginErrorType.network);
+      } else if (msg.contains('401') || msg.contains('incorrect') || msg.contains('Login failed')) {
+        _showLoginError('Kullanıcı adı veya şifre hatalı.\nLutfen tekrar deneyin.', LoginErrorType.wrongCredentials);
+      } else {
+        _showLoginError('Giriş sırasında bir hata oluştu.\n$msg', LoginErrorType.unknown);
       }
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) _openNumPad(_ActiveField.password);
+      });
     }
+  }
+
+  void _showLoginError(String message, LoginErrorType type) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: Icon(
+          type == LoginErrorType.network
+              ? Icons.wifi_off_rounded
+              : type == LoginErrorType.wrongCredentials
+                  ? Icons.lock_person_rounded
+                  : Icons.error_outline_rounded,
+          color: type == LoginErrorType.network ? Colors.orange : const Color(0xFFD32F2F),
+          size: 48,
+        ),
+        title: Text(
+          type == LoginErrorType.network
+              ? 'Bağlantı Hatası'
+              : type == LoginErrorType.wrongCredentials
+                  ? 'Giriş Hatası'
+                  : 'Hata',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w700, color: _kText),
+        ),
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: _kSubText, fontSize: 14, height: 1.5),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          if (type == LoginErrorType.wrongCredentials && _actualUsername != null)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                // Farklı kullanıcıya geç
+                setState(() {
+                  _actualUsername = null;
+                  _usernameController.clear();
+                  _usernameIsNumeric = true;
+                  _passwordController.clear();
+                });
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (mounted) _openNumPad(_ActiveField.username);
+                });
+              },
+              child: const Text('Farklı Hesap', style: TextStyle(color: _kSubText)),
+            ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kBlueMid,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            ),
+            child: const Text('Tamam', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _demoLogin() async {
@@ -266,50 +413,54 @@ class _LoginScreenState extends State<LoginScreen>
         child: Scaffold(
           backgroundColor: _kBg,
           resizeToAvoidBottomInset: false,
-        body: GestureDetector(
-          onTap: _numPadVisible ? _closeNumPad : null,
-          behavior: HitTestBehavior.translucent,
-          child: Stack(
-            children: [
-              // ── Arka plan dalgası ──────────────────────────────────────
-              _BgWave(),
+        body: Focus(
+          focusNode: _keyListenerFocus,
+          onKeyEvent: _handleKeyEvent,
+          child: GestureDetector(
+            onTap: _numPadVisible ? _closeNumPad : null,
+            behavior: HitTestBehavior.translucent,
+            child: Stack(
+              children: [
+                // ── Arka plan dalgası ──────────────────────────────────────
+                _BgWave(),
 
-              // ── SafeArea içerik ────────────────────────────────────────
-              SafeArea(
-                child: Column(
-                  children: [
-                    // Header
-                    _buildHeader(),
+                // ── SafeArea içerik ────────────────────────────────────────
+                SafeArea(
+                  child: Column(
+                    children: [
+                      // Header
+                      _buildHeader(),
 
-                    // Kaydırılabilir form kartı
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        padding: EdgeInsets.only(
-                          left: 20, right: 20, top: 20,
-                          bottom: _numPadVisible ? mq.size.height * 0.5 : 16,
-                        ),
-                        child: Column(
-                          children: [
-                            _buildFormCard(isLoading),
-                            const SizedBox(height: 16),
-                            // Demo + Kayıt Ol
-                            _buildSecondaryActions(isLoading),
-                          ],
+                      // Kaydırılabilir form kartı
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          padding: EdgeInsets.only(
+                            left: 20, right: 20, top: 20,
+                            bottom: _numPadVisible ? mq.size.height * 0.5 : 16,
+                          ),
+                          child: Column(
+                            children: [
+                              _buildFormCard(isLoading),
+                              const SizedBox(height: 16),
+                              // Demo + Kayıt Ol
+                              _buildSecondaryActions(isLoading),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    // Alt araçlar çubuğu
-                    _buildBottomTools(),
-                  ],
+                      // Alt araçlar çubuğu
+                      _buildBottomTools(),
+                    ],
+                  ),
                 ),
-              ),
 
-              // ── NumPad overlay ─────────────────────────────────────────
-              if (_numPadVisible || _numPadAnim.value > 0)
-                _buildNumPadOverlay(mq),
-            ],
+                // ── NumPad overlay ─────────────────────────────────────────
+                if (_numPadVisible || _numPadAnim.value > 0)
+                  _buildNumPadOverlay(mq),
+              ],
+            ),
           ),
         ),
       ),
@@ -767,21 +918,35 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // NumPad overlay (alttan kayarak gelir)
+  // NumPad overlay – iOS Lock Screen tarzı
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildNumPadOverlay(MediaQueryData mq) {
+    // Aktif alana göre renk tonu
+    final isUserField = _activeField == _ActiveField.username;
+    const numPadBg    = Color(0xFFF5F8FF);   // Uygulama arka planına yakın açık mavi-beyaz
+    const activeCard  = Color(0xFFE8F0FE);
+    const inactiveCard = Color(0xFFF0F4FA);
+    const activeBorder = _kBlueMid;
+    const inactiveBorder = Color(0xFFDDE4EF);
+    const labelColor  = _kSubText;
+    const valueColor  = _kText;
+
     return Positioned(
       left: 0, right: 0, bottom: 0,
       child: SlideTransition(
         position: _numPadSlide,
         child: GestureDetector(
-          onTap: () {}, // Tıklamayı yut (dışarıya geçme)
+          onTap: () {}, // Tıklamayı yut
           child: Container(
-            decoration: const BoxDecoration(
-              color: _kCard,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            decoration: BoxDecoration(
+              color: numPadBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               boxShadow: [
-                BoxShadow(color: Color(0x22000000), blurRadius: 24, offset: Offset(0, -4)),
+                BoxShadow(
+                  color: _kBlueDark.withOpacity(0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, -4),
+                ),
               ],
             ),
             child: SafeArea(
@@ -789,61 +954,202 @@ class _LoginScreenState extends State<LoginScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Tutma çizgisi + başlık
+                  // ── Drag handle ────────────────────────────────────────
                   GestureDetector(
                     onTap: _closeNumPad,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 40, height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _activeField == _ActiveField.username
-                                ? 'Müşteri No / Tel Girin'
-                                : 'PIN Şifrenizi Girin',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: _kBlueDark,
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.fromLTRB(0, 12, 0, 4),
+                      child: Container(
+                        width: 36, height: 4,
+                        decoration: BoxDecoration(
+                          color: _kBlueMid.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
                   ),
 
-                  // PIN göstergesi (şifre alanı açıksa)
-                  if (_activeField == _ActiveField.password)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildPinDots(),
-                    ),
-
-                  // Kullanıcı adı göstergesi (username alanı açıksa)
-                  if (_activeField == _ActiveField.username)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _usernameController.text.isEmpty
-                            ? '—'
-                            : _usernameController.text,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: _kBlueDark,
-                          letterSpacing: 4,
+                  // ── Başlık ─────────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                    child: Row(
+                      children: [
+                        Text(
+                          isUserField ? 'Müşteri No / TCKN / Telefon' : 'Şifre (PIN)',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _kSubText,
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: _closeNumPad,
+                          child: const Icon(Icons.keyboard_hide_rounded, size: 20, color: _kSubText),
+                        ),
+                      ],
                     ),
+                  ),
 
-                  // NumPad
+                  // ── Alan seçici (kullanıcı / şifre) ───────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Row(
+                      children: [
+                        if (!_isRememberedUser)
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _usernameIsNumeric
+                                  ? () {
+                                      if (_activeField != _ActiveField.username) {
+                                        setState(() => _activeField = _ActiveField.username);
+                                      }
+                                    }
+                                  : null,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: _activeField == _ActiveField.username
+                                      ? activeCard
+                                      : inactiveCard,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _activeField == _ActiveField.username
+                                        ? activeBorder
+                                        : inactiveBorder,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.person_outline_rounded,
+                                            size: 12,
+                                            color: _activeField == _ActiveField.username
+                                                ? _kBlueMid
+                                                : labelColor),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Kullanıcı',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: _activeField == _ActiveField.username
+                                                ? _kBlueMid
+                                                : labelColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _usernameController.text.isEmpty
+                                          ? 'Girin...'
+                                          : _usernameController.text,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: _usernameController.text.isEmpty ? 0 : 2,
+                                        color: _usernameController.text.isEmpty
+                                            ? _kSubText.withOpacity(0.4)
+                                            : valueColor,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        if (!_isRememberedUser) const SizedBox(width: 10),
+
+                        // Şifre kutusu
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_activeField != _ActiveField.password) {
+                                setState(() => _activeField = _ActiveField.password);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _activeField == _ActiveField.password
+                                    ? activeCard
+                                    : inactiveCard,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _activeField == _ActiveField.password
+                                      ? activeBorder
+                                      : inactiveBorder,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.lock_outline_rounded,
+                                          size: 12,
+                                          color: _activeField == _ActiveField.password
+                                              ? _kBlueMid
+                                              : labelColor),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Şifre',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: _activeField == _ActiveField.password
+                                              ? _kBlueMid
+                                              : labelColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  // PIN noktaları – renkli nokta stili
+                                  Row(
+                                    children: List.generate(_pinLength, (i) {
+                                      final filled = i < _passwordController.text.length;
+                                      return AnimatedContainer(
+                                        duration: const Duration(milliseconds: 120),
+                                        curve: Curves.easeOut,
+                                        margin: const EdgeInsets.only(right: 8),
+                                        width: filled ? 13 : 11,
+                                        height: filled ? 13 : 11,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: filled
+                                              ? _kBlueMid
+                                              : _kSubText.withOpacity(0.2),
+                                          border: filled
+                                              ? null
+                                              : Border.all(color: _kSubText.withOpacity(0.3), width: 1.5),
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // ── Numpad ─────────────────────────────────────────────
                   _buildNumPad(),
                   const SizedBox(height: 8),
                 ],
@@ -855,29 +1161,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildPinDots() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_pinLength, (i) {
-        final filled = i < _passwordController.text.length;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: filled ? _kBlueMid : Colors.grey.shade200,
-            border: Border.all(
-              color: filled ? _kBlueMid : Colors.grey.shade400,
-              width: 1.5,
-            ),
-          ),
-        );
-      }),
-    );
-  }
-
   Widget _buildNumPad() {
     const rows = [
       [1, 2, 3],
@@ -885,11 +1168,13 @@ class _LoginScreenState extends State<LoginScreen>
       [7, 8, 9],
     ];
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 36),
+      // iOS'ta yatay kenar boşlukları daha geniş
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
           ...rows.map((row) => _buildNumRow(row)),
           _buildBottomNumRow(),
+          const SizedBox(height: 4),
         ],
       ),
     );
@@ -897,9 +1182,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildNumRow(List<int> numbers) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: numbers.map(_buildNumKey).toList(),
       ),
     );
@@ -907,10 +1192,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildBottomNumRow() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Boş / Parmak izi placeholder
-        _buildIconKey(Icons.fingerprint_rounded, onTap: null),
+        _buildIconKey(Icons.fingerprint_rounded, onTap: null), // biometrik placeholder
         _buildNumKey(0),
         _buildIconKey(Icons.backspace_outlined, onTap: _onBackspace),
       ],
@@ -918,9 +1202,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   static const Map<int, String> _numLetters = {
-    1: '', 2: 'A B C', 3: 'D E F',
-    4: 'G H I', 5: 'J K L', 6: 'M N O',
-    7: 'P Q R S', 8: 'T U V', 9: 'W X Y Z',
+    1: '', 2: 'ABC', 3: 'DEF',
+    4: 'GHI', 5: 'JKL', 6: 'MNO',
+    7: 'PQRS', 8: 'TUV', 9: 'WXYZ',
     0: '+',
   };
 
@@ -941,9 +1225,8 @@ class _LoginScreenState extends State<LoginScreen>
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Yardımcı Widgetlar
+// iOS Lock Screen tarzı NumPad Tuşu
 // ══════════════════════════════════════════════════════════════════════════════
-
 class _NumKey extends StatefulWidget {
   final String? label;
   final String? letters;
@@ -956,83 +1239,168 @@ class _NumKey extends StatefulWidget {
   State<_NumKey> createState() => _NumKeyState();
 }
 
-class _NumKeyState extends State<_NumKey> {
-  bool _isPressed = false;
+class _NumKeyState extends State<_NumKey>
+    with SingleTickerProviderStateMixin {
+  bool _pressed = false;
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  late Animation<double> _color;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 25),
+      reverseDuration: const Duration(milliseconds: 90),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.88).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    _color = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  // ── Listener doğrudan pointer event'i yakalar —
+  // GestureDetector'ın gesture arena sistemi YOKTUR → 0ms gecikme
+
+  void _onPointerDown(PointerDownEvent _) {
+    if (widget.onTap == null) return;
+    HapticFeedback.lightImpact();   // titreşim
+    widget.onTap!();                 // aksiyon
+    _ctrl.stop();
+    if (mounted) {
+      setState(() => _pressed = true);
+      _ctrl.forward(from: 0.0);
+    }
+  }
+
+  void _onPointerUp(PointerUpEvent _) {
+    if (!mounted) return;
+    setState(() => _pressed = false);
+    _ctrl.reverse();
+  }
+
+  void _onPointerCancel(PointerCancelEvent _) {
+    if (!mounted) return;
+    setState(() => _pressed = false);
+    _ctrl.reverse();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Görünmez bir tuş (örneğin sol alt köşedeki boş buton) ise tıklamayı kapat
+    // Pasif tuş (fingerprint placeholder)
     if (widget.onTap == null) {
-      return const SizedBox(width: 76, height: 76);
+      return SizedBox(
+        width: 76, height: 76,
+        child: Center(
+          child: widget.icon != null
+              ? Icon(widget.icon, size: 28, color: _kSubText.withOpacity(0.4))
+              : null,
+        ),
+      );
     }
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap!();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        width: 76,
-        height: 76,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _isPressed ? const Color(0xFFD1D5DB) : const Color(0xFFF3F4F6),
-          boxShadow: _isPressed
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (widget.icon != null)
-              Icon(
-                widget.icon,
-                size: 30,
-                color: _kText,
-              )
-            else ...[
-              Text(
-                widget.label ?? '',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w400,
-                  color: _kText,
-                  height: 1.0,
+    // ── Listener: gesture arena yok → dokunuşta anında tepki ──
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) {
+          final t = _color.value;
+          // Açık tema: beyaz daire, basıldığında mavi ton
+          final circleBg = Color.lerp(
+            Colors.white,
+            const Color(0xFFE8F0FE),
+            t,
+          )!;
+          final textColor = Color.lerp(
+            _kText,
+            _kBlueMid,
+            t,
+          )!;
+          final subColor = Color.lerp(
+            _kSubText,
+            _kBlueMid.withOpacity(0.7),
+            t,
+          )!;
+
+          return Transform.scale(
+            scale: _scale.value,
+            child: Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: circleBg,
+                border: Border.all(
+                  color: _pressed
+                      ? _kBlueMid.withOpacity(0.4)
+                      : const Color(0xFFDDE4EF),
+                  width: 1.5,
                 ),
+                boxShadow: _pressed
+                    ? []
+                    : [
+                        BoxShadow(
+                          color: _kBlueDark.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
               ),
-              if (widget.letters != null && widget.letters!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    widget.letters!,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: _kSubText,
-                      letterSpacing: 1.5,
-                      height: 1.0,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (widget.icon != null)
+                    Icon(widget.icon, size: 26, color: textColor)
+                  else ...[
+                    Text(
+                      widget.label ?? '',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w400,
+                        color: textColor,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                ),
-            ],
-          ],
-        ),
+                    if (widget.letters != null && widget.letters!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(
+                          widget.letters!,
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            color: subColor,
+                            letterSpacing: 1.5,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-class _FieldTile extends StatelessWidget {
+class _FieldTile extends StatefulWidget {
   final String label;
   final String value;
   final IconData icon;
@@ -1058,72 +1426,150 @@ class _FieldTile extends StatelessWidget {
   });
 
   @override
+  State<_FieldTile> createState() => _FieldTileState();
+}
+
+class _FieldTileState extends State<_FieldTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  bool _pressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 25),
+      reverseDuration: const Duration(milliseconds: 90),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.975).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onPointerDown(PointerDownEvent e) {
+    // toggle butona basılmışsa ignore et (kendi handler'ı var)
+    widget.onTap();           // ANINDA aç
+    _ctrl.stop();
+    if (mounted) {
+      setState(() => _pressed = true);
+      _ctrl.forward(from: 0.0);
+    }
+  }
+
+  void _onPointerUp(PointerUpEvent _) {
+    if (!mounted) return;
+    setState(() => _pressed = false);
+    _ctrl.reverse();
+  }
+
+  void _onPointerCancel(PointerCancelEvent _) {
+    if (!mounted) return;
+    setState(() => _pressed = false);
+    _ctrl.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: isActive ? _kBlueMid.withOpacity(0.04) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, child) => Transform.scale(
+          scale: _scale.value,
+          alignment: Alignment.center,
+          child: child,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: isActive ? _kBlueMid : _kSubText),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isActive ? _kBlueMid : _kSubText,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: widget.isActive
+                ? _kBlueMid.withOpacity(0.06)
+                : _pressed
+                    ? _kBlueMid.withOpacity(0.03)
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Icon(widget.icon,
+                  size: 22,
+                  color: widget.isActive ? _kBlueMid : _kSubText),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: widget.isActive ? _kBlueMid : _kSubText,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    widget.isPassword
+                        ? _PinDisplay(
+                            value: widget.value,
+                            length: widget.pinLength ?? 6)
+                        : Text(
+                            widget.value.isEmpty
+                                ? 'Girmek için dokunun'
+                                : widget.value,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: widget.value.isEmpty ? 0 : 2,
+                              color: widget.value.isEmpty
+                                  ? _kSubText.withOpacity(0.5)
+                                  : _kText,
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+              // Klavye/numpad toggle
+              if (widget.showKeyboardToggle && widget.onToggleMode != null)
+                GestureDetector(
+                  onTap: widget.onToggleMode,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      widget.isNumericMode
+                          ? Icons.keyboard_alt_outlined
+                          : Icons.dialpad_rounded,
+                      size: 20,
+                      color: _kBlueMid,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  isPassword
-                      ? _PinDisplay(value: value, length: pinLength ?? 6)
-                      : Text(
-                          value.isEmpty ? 'Girmek için dokunun' : value,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: value.isEmpty ? 0 : 2,
-                            color: value.isEmpty ? _kSubText.withOpacity(0.5) : _kText,
-                          ),
-                        ),
-                ],
-              ),
-            ),
-            // Klavye/numpad toggle (sadece username için)
-            if (showKeyboardToggle && onToggleMode != null)
-              IconButton(
-                onPressed: onToggleMode,
-                icon: Icon(
-                  isNumericMode ? Icons.keyboard_alt_outlined : Icons.dialpad_rounded,
-                  size: 20,
-                  color: _kBlueMid,
                 ),
-                tooltip: isNumericMode ? 'Klavyeye geç' : 'Tuş takımına geç',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: widget.isActive ? _kBlueMid : Colors.grey.shade300,
+                size: 20,
               ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isActive ? _kBlueMid : Colors.grey.shade300,
-              size: 20,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 class _PinDisplay extends StatelessWidget {

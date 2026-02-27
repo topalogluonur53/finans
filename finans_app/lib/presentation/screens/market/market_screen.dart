@@ -6,6 +6,7 @@ import 'package:finans_app/core/utils/formatters.dart';
 import 'package:finans_app/presentation/screens/market/market_detail_screen.dart';
 import 'package:finans_app/presentation/screens/market/alarm_dialog.dart';
 import 'package:finans_app/presentation/screens/market/alarms_screen.dart';
+import 'package:finans_app/presentation/widgets/main_drawer.dart';
 import 'package:intl/intl.dart';
 
 class MarketScreen extends StatefulWidget {
@@ -46,207 +47,296 @@ class _MarketScreenState extends State<MarketScreen>
         .toList();
   }
 
+  /// 5 dakikadan yeni veri → taze (yeşil), aksi halde bayat (turuncu)
+  bool _isDataFresh(DateTime lastUpdated) {
+    return DateTime.now().difference(lastUpdated) < const Duration(minutes: 5);
+  }
+
   @override
   Widget build(BuildContext context) {
     final marketProvider = Provider.of<MarketProvider>(context);
 
+    final allPrices = marketProvider.prices;
     final marketData = {
       'favorites': _filter(
-          marketProvider.prices.where((p) => marketProvider.isFavorite(p.symbol)).toList()),
-      'commodity': _filter(marketProvider.prices
+          allPrices.where((p) => marketProvider.isFavorite(p.symbol)).toList()),
+      'commodity': _filter(allPrices
           .where((p) => p.category.toLowerCase() == 'commodity')
           .toList()),
-      'stock': _filter(marketProvider.prices
-          .where((p) => (p.category.toLowerCase() == 'stock' || p.category.toLowerCase() == 'index') && p.symbol.endsWith('.IS'))
+      // Borsa: BIST hisseleri + endeksler (is_index dahil)
+      'stock': _filter(allPrices
+          .where((p) =>
+              (p.category.toLowerCase() == 'stock' ||
+                  p.category.toLowerCase() == 'index'))
           .toList()),
-      'currency': _filter(marketProvider.prices
-          .where((p) => p.category.toLowerCase() == 'currency' && p.parentSymbol == null)
+      'currency': _filter(allPrices
+          .where((p) =>
+              p.category.toLowerCase() == 'currency' && p.parentSymbol == null)
           .toList()),
-      'crypto': _filter(
-          marketProvider.prices.where((p) => p.category.toLowerCase() == 'crypto').toList()),
+      'crypto': _filter(allPrices
+          .where((p) => p.category.toLowerCase() == 'crypto')
+          .toList()),
     };
 
-    return Column(
-      children: [
-        // ── Üst Bölüm: Arama + Sekmeler ──
-        Container(
-          color: AppTheme.surfaceDark,
-          child: Column(
-            children: [
-              // Arama satırı
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                height: _showSearch ? 52 : 0,
-                child: _showSearch
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        child: TextField(
-                          controller: _searchController,
-                          autofocus: true,
-                          onChanged: (v) =>
-                              setState(() => _searchQuery = v),
-                          decoration: InputDecoration(
-                            hintText: 'Sembol veya isim ara…',
-                            prefixIcon: const Icon(Icons.search,
-                                color: AppTheme.textDim),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear,
-                                        color: AppTheme.textDim),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                    },
-                                  )
-                                : null,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 0),
-                            filled: true,
-                            fillColor: AppTheme.backgroundDark,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-
-              // Sekme çubuğu
-              Row(
-                children: [
-                  Expanded(
-                    child: TabBar(
-                      controller: _tabController,
-                      isScrollable: false, // Ensures symmetric distribution
-                      indicatorColor: AppTheme.primaryColor,
-                      labelColor: AppTheme.primaryColor,
-                      unselectedLabelColor: AppTheme.textDim,
-                      indicatorSize: TabBarIndicatorSize.label,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 0),
-                      labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                      unselectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.normal),
-                      tabs: const [
-                        Tab(icon: Icon(Icons.star_outline, size: 20), text: 'Favori'),
-                        Tab(icon: Icon(Icons.monetization_on_outlined, size: 20), text: 'Emtia'),
-                        Tab(icon: Icon(Icons.business_center_outlined, size: 20), text: 'Borsa'),
-                        Tab(icon: Icon(Icons.payments_outlined, size: 20), text: 'Döviz'),
-                        Tab(icon: Icon(Icons.currency_bitcoin_outlined, size: 20), text: 'Kripto'),
-                      ],
-                    ),
-                  ),
-                  // Arama ikonu
-                  IconButton(
-                    icon: Icon(
-                      _showSearch ? Icons.search_off : Icons.search,
-                      color: _showSearch
-                          ? AppTheme.primaryColor
-                          : AppTheme.textDim,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _showSearch = !_showSearch;
-                        if (!_showSearch) {
-                          _searchController.clear();
-                          _searchQuery = '';
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ],
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
+      drawer: const MainDrawer(),
+      appBar: AppBar(
+        title: const Text('Piyasalar'),
+        elevation: 2,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         ),
-
-        // ── Liste veya Yükleniyor ──
-        if (marketProvider.isLoading && marketProvider.prices.isEmpty)
-          const Expanded(child: Center(child: CircularProgressIndicator()))
-        else
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+      ),
+      body: Column(
+        children: [
+          // ── Üst Bölüm: Arama + Sekmeler ──
+          Container(
+            color: AppTheme.surfaceDark,
+            child: Column(
               children: [
-                _buildMarketList(
-                    context, marketData['favorites'] ?? [], marketProvider),
-                _buildMarketList(
-                    context, marketData['commodity'] ?? [], marketProvider),
-                _buildMarketList(
-                    context, marketData['stock'] ?? [], marketProvider),
-                _buildMarketList(
-                    context, marketData['currency'] ?? [], marketProvider),
-                _buildMarketList(
-                    context, marketData['crypto'] ?? [], marketProvider),
+                // Arama satırı
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  height: _showSearch ? 52 : 0,
+                  child: _showSearch
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          child: TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            onChanged: (v) => setState(() => _searchQuery = v),
+                            decoration: InputDecoration(
+                              hintText: 'Sembol veya isim ara…',
+                              prefixIcon: const Icon(Icons.search,
+                                  color: AppTheme.textDim),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear,
+                                          color: AppTheme.textDim),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _searchQuery = '');
+                                      },
+                                    )
+                                  : null,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 0),
+                              filled: true,
+                              fillColor: AppTheme.backgroundDark,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+
+                // Sekme çubuğu
+                Row(
+                  children: [
+                    Expanded(
+                      child: TabBar(
+                        controller: _tabController,
+                        isScrollable: false, // Ensures symmetric distribution
+                        indicatorColor: AppTheme.primaryColor,
+                        labelColor: AppTheme.primaryColor,
+                        unselectedLabelColor: AppTheme.textDim,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 0),
+                        labelStyle: const TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold),
+                        unselectedLabelStyle: const TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.normal),
+                        tabs: const [
+                          Tab(
+                              icon: Icon(Icons.star_outline, size: 20),
+                              text: 'Favori'),
+                          Tab(
+                              icon: Icon(Icons.monetization_on_outlined,
+                                  size: 20),
+                              text: 'Emtia'),
+                          Tab(
+                              icon: Icon(Icons.business_center_outlined,
+                                  size: 20),
+                              text: 'Borsa'),
+                          Tab(
+                              icon: Icon(Icons.payments_outlined, size: 20),
+                              text: 'Döviz'),
+                          Tab(
+                              icon: Icon(Icons.currency_bitcoin_outlined,
+                                  size: 20),
+                              text: 'Kripto'),
+                        ],
+                      ),
+                    ),
+                    // Arama ikonu
+                    IconButton(
+                      icon: Icon(
+                        _showSearch ? Icons.search_off : Icons.search,
+                        color: _showSearch
+                            ? AppTheme.primaryColor
+                            : AppTheme.textDim,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _showSearch = !_showSearch;
+                          if (!_showSearch) {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
 
-        // ── Alt bilgi çubuğu ──
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          color: AppTheme.backgroundDark,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (marketProvider.lastUpdated != null)
-                Text(
-                  'Son güncelleme: ${DateFormat('HH:mm').format(marketProvider.lastUpdated!)}',
-                  style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textDim),
-                )
-              else
-                const SizedBox.shrink(),
-              Row(
-                children: [
-                  InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AlarmsScreen(),
+          // ── Liste veya Yükleniyor ──
+          if (marketProvider.isLoading && marketProvider.prices.isEmpty)
+            const Expanded(child: Center(child: CircularProgressIndicator()))
+          else if (!marketProvider.isLoading &&
+              marketProvider.prices.isEmpty &&
+              marketProvider.lastError != null)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off_outlined,
+                          size: 56, color: AppTheme.textDim),
+                      const SizedBox(height: 16),
+                      Text(
+                        marketProvider.lastError!,
+                        style: const TextStyle(
+                            color: AppTheme.textDim, fontSize: 15),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.notifications_outlined,
-                            size: 14, color: AppTheme.primaryColor),
-                        SizedBox(width: 4),
-                        Text(
-                          'Alarmlarım',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: marketProvider.refreshManual,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Tekrar Dene'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  InkWell(
-                    onTap: marketProvider.refreshManual,
-                    child: const Row(
-                      children: [
-                        Icon(Icons.refresh, size: 14, color: AppTheme.textDim),
-                        SizedBox(width: 4),
-                        Text(
-                          'Yenile',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textDim,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildMarketList(
+                      context, marketData['favorites'] ?? [], marketProvider),
+                  _buildMarketList(
+                      context, marketData['commodity'] ?? [], marketProvider),
+                  _buildMarketList(
+                      context, marketData['stock'] ?? [], marketProvider),
+                  _buildMarketList(
+                      context, marketData['currency'] ?? [], marketProvider),
+                  _buildMarketList(
+                      context, marketData['crypto'] ?? [], marketProvider),
                 ],
               ),
-            ],
+            ),
+
+          // ── Alt bilgi çubuğu ──
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            color: AppTheme.backgroundDark,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (marketProvider.lastUpdated != null)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.circle,
+                        size: 8,
+                        color: _isDataFresh(marketProvider.lastUpdated!)
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Son güncelleme: ${DateFormat('HH:mm').format(marketProvider.lastUpdated!)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _isDataFresh(marketProvider.lastUpdated!)
+                              ? AppTheme.textDim
+                              : Colors.orange,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  const Text(
+                    'Veri bekleniyor…',
+                    style: TextStyle(fontSize: 11, color: AppTheme.textDim),
+                  ),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AlarmsScreen(),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.notifications_outlined,
+                              size: 14, color: AppTheme.primaryColor),
+                          SizedBox(width: 4),
+                          Text(
+                            'Alarmlarım',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    InkWell(
+                      onTap: marketProvider.refreshManual,
+                      child: const Row(
+                        children: [
+                          Icon(Icons.refresh,
+                              size: 14, color: AppTheme.textDim),
+                          SizedBox(width: 4),
+                          Text(
+                            'Yenile',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textDim,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

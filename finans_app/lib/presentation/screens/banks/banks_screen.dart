@@ -161,6 +161,10 @@ class _BanksScreenState extends State<BanksScreen> {
         title: const Text('Bankalar'),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           if (_banks.isNotEmpty)
             IconButton(

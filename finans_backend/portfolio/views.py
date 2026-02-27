@@ -6,6 +6,11 @@ from .models import Asset, Transaction
 from .serializers import AssetSerializer, TransactionSerializer
 from decimal import Decimal
 import random
+import hashlib
+import hmac
+import time
+import requests
+from rest_framework.views import APIView
 
 # MOCK PRICE SERVICE - Still here as fallback but preferred is MarketData
 def get_current_price(asset_type, symbol):
@@ -107,3 +112,78 @@ class TransactionViewSet(viewsets.ModelViewSet):
             asset.quantity -= transaction.quantity
             
         asset.save()
+
+class BinanceProxyView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        api_key = request.data.get('apiKey')
+        api_secret = request.data.get('apiSecret')
+
+        if not api_key or not api_secret:
+            return Response({'error': 'API Key ve Secret gereklidir.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            base_url = 'https://api.binance.com'
+            timestamp = int(time.time() * 1000)
+            query_string = f'timestamp={timestamp}&recvWindow=60000'
+            
+            signature = hmac.new(
+                api_secret.encode('utf-8'),
+                query_string.encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+            
+            url = f"{base_url}/api/v3/account?{query_string}&signature={signature}"
+            headers = {
+                'X-MBX-APIKEY': api_key
+            }
+            
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                balances = data.get('balances', [])
+                
+                # Filter non-zero
+                non_zero = []
+                for b in balances:
+                    free = float(b.get('free', 0))
+                    locked = float(b.get('locked', 0))
+                    if free > 0 or locked > 0:
+                        non_zero.append({
+                            'asset': b.get('asset'),
+                            'total': free + locked
+                        })
+                
+                if not non_zero:
+                    return Response({'totalUsdt': 0.0})
+                
+                # Fetch prices to calculate USDT value
+                ticker_url = f"{base_url}/api/v3/ticker/price"
+                ticker_response = requests.get(ticker_url)
+                
+                total_usdt = 0.0
+                if ticker_response.status_code == 200:
+                    tickers = ticker_response.json()
+                    price_map = {t['symbol']: float(t['price']) for t in tickers}
+                    
+                    for item in non_zero:
+                        asset = item['asset']
+                        amount = item['total']
+                        
+                        if asset == 'USDT':
+                            total_usdt += amount
+                        else:
+                            pair = f"{asset}USDT"
+                            if pair in price_map:
+                                total_usdt += amount * price_map[pair]
+                            elif asset == 'BETH' and 'ETHUSDT' in price_map:
+                                total_usdt += amount * price_map['ETHUSDT']
+
+                return Response({'totalUsdt': total_usdt})
+            else:
+                return Response({'error': f'Binance API Error: {response.text}'}, status=response.status_code)
+                
+        except Exception as e:
+            return Response({'error': f'Sunucu Hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

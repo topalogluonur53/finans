@@ -56,6 +56,10 @@ class _DebtsScreenState extends State<DebtsScreen> {
         title: const Text('Borçlarım'),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: _debts.isEmpty
           ? Center(
@@ -74,7 +78,6 @@ class _DebtsScreenState extends State<DebtsScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Borç ekleme
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Borç ekleme özelliği eklenecek')),
           );

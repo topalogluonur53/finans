@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:finans_app/data/models/asset.dart';
 import 'package:finans_app/data/providers/portfolio_provider.dart';
 import 'package:finans_app/data/providers/market_provider.dart';
+import 'package:finans_app/data/providers/binance_provider.dart';
 import 'package:finans_app/core/utils/formatters.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/presentation/widgets/asset_list_item.dart';
 import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart';
+import 'package:finans_app/presentation/widgets/main_drawer.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class PortfolioScreen extends StatefulWidget {
@@ -46,9 +48,11 @@ class _PortfolioScreenState extends State<PortfolioScreen>
   @override
   Widget build(BuildContext context) {
     final market = Provider.of<MarketProvider>(context);
+    final binance = Provider.of<BinanceProvider>(context);
+
     return Consumer<PortfolioProvider>(builder: (context, portfolio, child) {
       if (portfolio.isLoading) {
-        return const Center(child: CircularProgressIndicator());
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
 
       // Filter assets by selected category
@@ -65,11 +69,14 @@ class _PortfolioScreenState extends State<PortfolioScreen>
               }
             }).toList();
 
-      final totalValue = portfolio.getTotalValue(market);
-      final totalCost = portfolio.getTotalCost(market);
+      double binanceValue = (binance.totalUsdtBalance ?? 0) *
+          (market.usdTryRate > 0 ? market.usdTryRate : 1.0);
+      double binanceCost = binanceValue; // To prevent P/L distortion
+
+      final totalValue = portfolio.getTotalValue(market) + binanceValue;
+      final totalCost = portfolio.getTotalCost(market) + binanceCost;
       final totalPL = totalValue - totalCost;
-      final totalPLPercent =
-          totalCost > 0 ? (totalPL / totalCost * 100) : 0.0;
+      final totalPLPercent = totalCost > 0 ? (totalPL / totalCost * 100) : 0.0;
       final isPLPositive = totalPL >= 0;
 
       // Filtered totals
@@ -79,12 +86,41 @@ class _PortfolioScreenState extends State<PortfolioScreen>
         filteredValue += portfolio.getAssetCurrentValue(a, market);
         filteredCost += portfolio.getAssetCost(a, market);
       }
+
+      if (_selectedCategory == AssetCategory.crypto ||
+          _selectedCategory == null) {
+        filteredValue += binanceValue;
+        filteredCost += binanceCost;
+      }
+
       final filteredPL = filteredValue - filteredCost;
       final filteredPLPercent =
           filteredCost > 0 ? (filteredPL / filteredCost * 100) : 0.0;
 
-      return Column(
-        children: [
+      return Scaffold(
+        backgroundColor: AppTheme.backgroundDark,
+        drawer: const MainDrawer(),
+        appBar: AppBar(
+          title: const Text('Portfolyo'),
+          elevation: 2,
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add_chart_rounded),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddAssetScreen()),
+              ),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
           // ─── Summary Card ────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -99,6 +135,7 @@ class _PortfolioScreenState extends State<PortfolioScreen>
                   ? isPLPositive
                   : filteredPL >= 0,
               isFiltered: _selectedCategory != null,
+              selectedCategory: _selectedCategory,
               assets: filteredAssets,
               market: market,
               portfolio: portfolio,
@@ -127,22 +164,26 @@ class _PortfolioScreenState extends State<PortfolioScreen>
 
           // ─── Asset List ───────────────────────────────────────────────
           Expanded(
-            child: portfolio.assets.isEmpty
-                ? _EmptyState()
-                : filteredAssets.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Bu kategoride varlık yok.',
-                          style: TextStyle(color: AppTheme.textDim),
-                        ),
-                      )
-                    : ListView(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 12, 16, 80),
-                        children: [
-                          // Pie chart is now minimzed inside Summary Card
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+              children: [
+                if (portfolio.assets.isEmpty && _selectedCategory != AssetCategory.crypto)
+                  _EmptyState()
+                else if (filteredAssets.isEmpty && (_selectedCategory == AssetCategory.crypto || _selectedCategory != null))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                        _selectedCategory == AssetCategory.crypto 
+                            ? 'Bu kategoride manuel eklenmiş varlık yok.' 
+                            : 'Bu kategoride varlık yok.',
+                        style: const TextStyle(color: AppTheme.textDim),
+                      ),
+                    ),
+                  ),
 
-                          ...filteredAssets.map(
+                if (filteredAssets.isNotEmpty)
+                  ...filteredAssets.map(
                             (asset) => Dismissible(
                               key: ValueKey('asset_${asset.id}'),
                               direction: DismissDirection.endToStart,
@@ -211,11 +252,12 @@ class _PortfolioScreenState extends State<PortfolioScreen>
                               child: AssetListItem(asset: asset),
                             ),
                           ),
-                        ],
-                      ),
+              ],
+            ),
           ),
         ],
-      );
+      ),
+    );
     });
   }
 }
@@ -229,6 +271,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
   final double totalPLPercent;
   final bool isPLPositive;
   final bool isFiltered;
+  final AssetCategory? selectedCategory;
   final List<Asset> assets;
   final MarketProvider market;
   final PortfolioProvider portfolio;
@@ -240,6 +283,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
     required this.totalPLPercent,
     required this.isPLPositive,
     required this.isFiltered,
+    this.selectedCategory,
     required this.assets,
     required this.market,
     required this.portfolio,
@@ -266,6 +310,16 @@ class _PortfolioSummaryCard extends StatelessWidget {
         typeValues[asset.name] = (typeValues[asset.name] ?? 0) + value;
       }
     }
+    
+    // Add binance to mini pie chart
+    try {
+      final binance = Provider.of<BinanceProvider>(context, listen: false);
+      double binanceValue = (binance.totalUsdtBalance ?? 0) * (market.usdTryRate > 0 ? market.usdTryRate : 1.0);
+      if (binanceValue > 0 && (selectedCategory == null || selectedCategory == AssetCategory.crypto)) {
+         typeValues['Binance'] = (typeValues['Binance'] ?? 0) + binanceValue;
+      }
+    } catch (_) {}
+    
     final entries = typeValues.entries.toList();
 
     return Container(
