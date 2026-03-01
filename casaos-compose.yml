@@ -16,8 +16,8 @@ x-casaos:
     tr_tr: "Finansal Takip"
   developer: "Onur Topaloğlu"
   author: "Onur Topaloğlu"
-  icon: "https://raw.githubusercontent.com/topalogluonur53/finans-app/main/finans_app/assets/icons/app_icon.png"
-  thumbnail: "https://raw.githubusercontent.com/topalogluonur53/finans-app/main/finans_app/assets/icons/app_icon.png"
+  icon: "https://raw.githubusercontent.com/topalogluonur53/Ofinans/main/finans_app/assets/icons/app_icon.png"
+  thumbnail: "https://raw.githubusercontent.com/topalogluonur53/Ofinans/main/finans_app/assets/icons/app_icon.png"
   title:
     en_us: "Finans App"
     tr_tr: "Finans App"
@@ -33,7 +33,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - /DATA/AppData/finans-app/redis:/data
 
   backend:
     image: ${DOCKER_USERNAME:-topalogluonur53}/finans-backend:latest
@@ -47,8 +47,8 @@ services:
     depends_on:
       - redis
     volumes:
-      - finans_db_data:/app/data
-      - django_static:/app/static
+      - /DATA/AppData/finans-app/db_data:/app/data
+      - /DATA/AppData/finans-app/static:/app/static
     x-casaos:
       envs:
         - container: CELERY_BROKER_URL
@@ -70,7 +70,7 @@ services:
       - redis
       - backend
     volumes:
-      - finans_db_data:/app/data
+      - /DATA/AppData/finans-app/db_data:/app/data
 
   celery_beat:
     image: ${DOCKER_USERNAME:-topalogluonur53}/finans-backend:latest
@@ -84,7 +84,7 @@ services:
       - redis
       - backend
     volumes:
-      - finans_db_data:/app/data
+      - /DATA/AppData/finans-app/db_data:/app/data
 
   frontend:
     image: ${DOCKER_USERNAME:-topalogluonur53}/finans-frontend:latest
@@ -95,7 +95,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - django_static:/usr/share/nginx/static:ro
+      - /DATA/AppData/finans-app/static:/usr/share/nginx/static:ro
 
   watchtower:
     image: containrrr/watchtower
@@ -105,7 +105,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 3600 finans-backend finans-frontend finans-celery-worker finans-celery-beat
     
-volumes:
-  django_static:
-  redis_data:
-  finans_db_data:
+
