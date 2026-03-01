@@ -9,3 +9,4 @@ django-celery-beat
 yfinance
 requests
 eventlet
+gunicorn

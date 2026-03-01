@@ -26,8 +26,8 @@ SECRET_KEY = 'django-insecure-b5w$$iw(!8g#%t3h5hrp20h3245zo1o=8%7n0p=3o=dqh@-6s(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['finans.onurtopaloglu.uk', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://finans.onurtopaloglu.uk']
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://finans.onurtopaloglu.uk', 'http://localhost']
 
 
 # Application definition
@@ -151,9 +151,9 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
-# Celery Configuration
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+import os
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

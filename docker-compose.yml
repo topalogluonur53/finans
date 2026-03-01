@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: finans-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: ./finans_backend
+      dockerfile: Dockerfile
+    container_name: finans-backend
+    restart: unless-stopped
+    ports:
+      - "2223:2223"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./finans_backend/db.sqlite3:/app/db.sqlite3
+      - django_static:/app/static
+
+  celery_worker:
+    build:
+      context: ./finans_backend
+      dockerfile: Dockerfile
+    container_name: finans-celery-worker
+    restart: unless-stopped
+    command: [ "celery", "-A", "config", "worker", "--loglevel=info" ]
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./finans_backend/db.sqlite3:/app/db.sqlite3
+
+  celery_beat:
+    build:
+      context: ./finans_backend
+      dockerfile: Dockerfile
+    container_name: finans-celery-beat
+    restart: unless-stopped
+    command: [ "celery", "-A", "config", "beat", "--loglevel=info" ]
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./finans_backend/db.sqlite3:/app/db.sqlite3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: finans-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    volumes:
+      - django_static:/usr/share/nginx/static:ro
+
+volumes:
+  django_static:
+  redis_data:
