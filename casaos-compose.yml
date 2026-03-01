@@ -1,0 +1,111 @@
+version: '3.8'
+
+name: "finans-app"
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+    - arm
+  main: "frontend"
+  description:
+    en_us: "Finans App - A customized financial tracking application."
+    tr_tr: "Finans App - Kişisel ve şirkete özel finansal takip uygulaması."
+  tagline:
+    en_us: "Financial Tracking"
+    tr_tr: "Finansal Takip"
+  developer: "Onur Topaloğlu"
+  author: "Onur Topaloğlu"
+  icon: "https://raw.githubusercontent.com/topalogluonur53/finans-app/main/finans_app/assets/icons/app_icon.png"
+  thumbnail: "https://raw.githubusercontent.com/topalogluonur53/finans-app/main/finans_app/assets/icons/app_icon.png"
+  title:
+    en_us: "Finans App"
+    tr_tr: "Finans App"
+  category: "Finance"
+  port_map: "8080"
+  index: "/"
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: finans-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    image: ${DOCKER_USERNAME:-topalogluonur53}/finans-backend:latest
+    container_name: finans-backend
+    restart: unless-stopped
+    ports:
+      - "2223:2223"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - finans_db_data:/app/data
+      - django_static:/app/static
+    x-casaos:
+      envs:
+        - container: CELERY_BROKER_URL
+          description:
+            en_us: "Celery Broker URL"
+        - container: CELERY_RESULT_BACKEND
+          description:
+            en_us: "Celery Result Backend"
+
+  celery_worker:
+    image: ${DOCKER_USERNAME:-topalogluonur53}/finans-backend:latest
+    container_name: finans-celery-worker
+    restart: unless-stopped
+    command: [ "celery", "-A", "config", "worker", "--loglevel=info" ]
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - finans_db_data:/app/data
+
+  celery_beat:
+    image: ${DOCKER_USERNAME:-topalogluonur53}/finans-backend:latest
+    container_name: finans-celery-beat
+    restart: unless-stopped
+    command: [ "celery", "-A", "config", "beat", "--loglevel=info" ]
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - finans_db_data:/app/data
+
+  frontend:
+    image: ${DOCKER_USERNAME:-topalogluonur53}/finans-frontend:latest
+    container_name: finans-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    volumes:
+      - django_static:/usr/share/nginx/static:ro
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: finans-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 3600 finans-backend finans-frontend finans-celery-worker finans-celery-beat
+    
+volumes:
+  django_static:
+  redis_data:
+  finans_db_data:
