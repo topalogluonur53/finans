@@ -42,7 +42,7 @@ jobs:
       with:
         context: ./finans_backend
         file: ./finans_backend/Dockerfile
-        platforms: linux/amd64,linux/arm64,linux/arm/v7
+        platforms: linux/amd64,linux/arm64
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/finans-backend:latest
         
@@ -51,6 +51,6 @@ jobs:
       with:
         context: .
         file: ./nginx/Dockerfile
-        platforms: linux/amd64,linux/arm64,linux/arm/v7
+        platforms: linux/amd64,linux/arm64
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/finans-frontend:latest
