@@ -78,8 +78,8 @@ class _PortfolioScreenState extends State<PortfolioScreen>
       // Extract unique tags
       final uniqueTags = portfolio.assets
           .map((a) => a.tag)
-          .where((tag) => tag != null && tag.isNotEmpty)
-          .map((tag) => tag!)
+          .whereType<String>()
+          .where((tag) => tag.isNotEmpty)
           .toSet()
           .toList();
 
