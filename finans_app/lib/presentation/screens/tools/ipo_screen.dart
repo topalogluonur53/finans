@@ -16,10 +16,11 @@ class IPOScreen extends StatefulWidget {
   State<IPOScreen> createState() => _IPOScreenState();
 }
 
-class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMixin {
+class _IPOScreenState extends State<IPOScreen>
+    with SingleTickerProviderStateMixin {
   final IPOService _service = IPOService();
   late TabController _tabController;
-  
+
   List<IPO> _upcomingIPOs = [];
   List<IPO> _recentIPOs = [];
   List<IPONews> _ipoNews = [];
@@ -57,14 +58,17 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
         _service.fetchIPONews(forceRefresh: forceRefresh),
         _portfolioService.getPortfolio(),
       ]);
-      
+
       final List<IPO> allIPOs = results[0] as List<IPO>;
       final List<IPONews> news = results[1] as List<IPONews>;
-      final List<IPOPortfolioItem> portfolio = results[2] as List<IPOPortfolioItem>;
-      
+      final List<IPOPortfolioItem> portfolio =
+          results[2] as List<IPOPortfolioItem>;
+
       setState(() {
         _upcomingIPOs = allIPOs.where((ipo) => ipo.isUpcoming).toList();
-        _recentIPOs = allIPOs.where((ipo) => !ipo.isUpcoming && !ipo.isWithdrawn).toList();
+        _recentIPOs = allIPOs
+            .where((ipo) => !ipo.isUpcoming && !ipo.isWithdrawn)
+            .toList();
         _ipoNews = news;
         _portfolioItems = portfolio;
         _isLoading = false;
@@ -148,7 +152,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             color: AppTheme.surfaceDark,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () async {
@@ -166,7 +171,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -182,7 +188,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
                         ),
                         Text(
                           news.displayDate,
-                          style: const TextStyle(color: AppTheme.textDim, fontSize: 10),
+                          style: const TextStyle(
+                              color: AppTheme.textDim, fontSize: 10),
                         ),
                       ],
                     ),
@@ -200,7 +207,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
                       news.content,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppTheme.textDim, fontSize: 13),
+                      style: const TextStyle(
+                          color: AppTheme.textDim, fontSize: 13),
                     ),
                     const SizedBox(height: 12),
                     const Row(
@@ -214,7 +222,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Icon(Icons.arrow_right, color: AppTheme.primaryColor, size: 20),
+                        Icon(Icons.arrow_right,
+                            color: AppTheme.primaryColor, size: 20),
                       ],
                     ),
                   ],
@@ -266,7 +275,9 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
             ),
             const SizedBox(height: 16),
             Text(
-              isUpcoming ? 'Yaklaşan halka arz bulunamadı' : 'Son 30 günde halka arz bulunamadı',
+              isUpcoming
+                  ? 'Yaklaşan halka arz bulunamadı'
+                  : 'Son 30 günde halka arz bulunamadı',
               style: const TextStyle(color: AppTheme.textDim),
             ),
           ],
@@ -284,15 +295,19 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
         },
       ),
     );
+  }
+
   Widget _buildPortfolioList() {
     if (_portfolioItems.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.account_balance_wallet_outlined, size: 64, color: AppTheme.textDim),
+            const Icon(Icons.account_balance_wallet_outlined,
+                size: 64, color: AppTheme.textDim),
             const SizedBox(height: 16),
-            const Text('Portföyünüzde henüz halka arz yok', style: TextStyle(color: AppTheme.textDim)),
+            const Text('Portföyünüzde henüz halka arz yok',
+                style: TextStyle(color: AppTheme.textDim)),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
@@ -330,7 +345,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Toplam Kar/Zarar', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                  const Text('Toplam Kar/Zarar',
+                      style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
                   Text(
                     '${totalProfit >= 0 ? '+' : ''}${totalProfit.toStringAsFixed(2)} TL',
                     style: TextStyle(
@@ -344,7 +360,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Getiri Oranı', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                  const Text('Getiri Oranı',
+                      style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
                   Text(
                     '${totalProfitPct >= 0 ? '+' : ''}${totalProfitPct.toStringAsFixed(2)}%',
                     style: TextStyle(
@@ -364,7 +381,9 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
             itemCount: _portfolioItems.length,
             itemBuilder: (context, index) {
               final item = _portfolioItems[index];
-              return _PortfolioCard(item: item, onRemove: () => _removePortfolioItem(item.symbol));
+              return _PortfolioCard(
+                  item: item,
+                  onRemove: () => _removePortfolioItem(item.symbol));
             },
           ),
         ),
@@ -398,13 +417,18 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
               SizedBox(height: 12),
               Text(
                 '📊 Gösterilen Bilgiler:',
-                style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: AppTheme.textLight, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
-              Text('• Şirket adı ve sembolü', style: TextStyle(color: AppTheme.textDim)),
-              Text('• Borsa (NASDAQ, NYSE, vb.)', style: TextStyle(color: AppTheme.textDim)),
-              Text('• Halka arz tarihi', style: TextStyle(color: AppTheme.textDim)),
-              Text('• Fiyat aralığı veya kesin fiyat', style: TextStyle(color: AppTheme.textDim)),
+              Text('• Şirket adı ve sembolü',
+                  style: TextStyle(color: AppTheme.textDim)),
+              Text('• Borsa (NASDAQ, NYSE, vb.)',
+                  style: TextStyle(color: AppTheme.textDim)),
+              Text('• Halka arz tarihi',
+                  style: TextStyle(color: AppTheme.textDim)),
+              Text('• Fiyat aralığı veya kesin fiyat',
+                  style: TextStyle(color: AppTheme.textDim)),
               Text('• Hisse sayısı', style: TextStyle(color: AppTheme.textDim)),
               SizedBox(height: 12),
               Text(
@@ -417,7 +441,8 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Anladım', style: TextStyle(color: AppTheme.primaryColor)),
+            child: const Text('Anladım',
+                style: TextStyle(color: AppTheme.primaryColor)),
           ),
         ],
       ),
@@ -484,9 +509,11 @@ class _IPOCard extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -512,7 +539,8 @@ class _IPOCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -541,17 +569,17 @@ class _IPOCard extends StatelessWidget {
               _buildDetailRow(Icons.calendar_today, 'Tarih', ipo.displayDate),
               if (ipo.priceRange != null) ...[
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.attach_money, 'Fiyat Aralığı', ipo.priceRange!),
+                _buildDetailRow(
+                    Icons.attach_money, 'Fiyat Aralığı', ipo.priceRange!),
               ],
               if (ipo.price != null) ...[
                 const SizedBox(height: 8),
                 _buildDetailRow(
-                  Icons.price_check, 
-                  'Fiyat', 
-                  ipo.exchange == 'BIST' 
-                      ? '${ipo.price!.toStringAsFixed(2)} TL' 
-                      : '\$${ipo.price!.toStringAsFixed(2)}'
-                ),
+                    Icons.price_check,
+                    'Fiyat',
+                    ipo.exchange == 'BIST'
+                        ? '${ipo.price!.toStringAsFixed(2)} TL'
+                        : '\$${ipo.price!.toStringAsFixed(2)}'),
               ],
               if (ipo.numberOfShares != null) ...[
                 const SizedBox(height: 8),
@@ -602,7 +630,7 @@ class _PortfolioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isProfit = item.profitLoss >= 0;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: AppTheme.surfaceDark,
@@ -620,10 +648,16 @@ class _PortfolioCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(item.company,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textLight)),
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textLight)),
                       const SizedBox(height: 4),
                       Text(item.symbol,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor)),
                     ],
                   ),
                 ),
@@ -634,16 +668,23 @@ class _PortfolioCard extends StatelessWidget {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         backgroundColor: AppTheme.surfaceDark,
-                        title: const Text('Sil', style: TextStyle(color: AppTheme.textLight)),
-                        content: const Text('Bu kaydı silmek istediğinize emin misiniz?', style: TextStyle(color: AppTheme.textDim)),
+                        title: const Text('Sil',
+                            style: TextStyle(color: AppTheme.textLight)),
+                        content: const Text(
+                            'Bu kaydı silmek istediğinize emin misiniz?',
+                            style: TextStyle(color: AppTheme.textDim)),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('İptal', style: TextStyle(color: Colors.grey))),
                           TextButton(
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              onRemove();
-                            },
-                            child: const Text('Sil', style: TextStyle(color: Colors.red))),
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('İptal',
+                                  style: TextStyle(color: Colors.grey))),
+                          TextButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                onRemove();
+                              },
+                              child: const Text('Sil',
+                                  style: TextStyle(color: Colors.red))),
                         ],
                       ),
                     );
@@ -656,25 +697,36 @@ class _PortfolioCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildStatColumn('Adet', '${item.quantity}'),
-                _buildStatColumn('Maliyet', '${item.costPrice.toStringAsFixed(2)} TL'),
-                _buildStatColumn('Güncel', '${item.isSold ? (item.soldPrice ?? 0).toStringAsFixed(2) : item.currentPrice.toStringAsFixed(2)} TL', color: item.isSold ? Colors.orange : null),
+                _buildStatColumn(
+                    'Maliyet', '${item.costPrice.toStringAsFixed(2)} TL'),
+                _buildStatColumn('Güncel',
+                    '${item.isSold ? (item.soldPrice ?? 0).toStringAsFixed(2) : item.currentPrice.toStringAsFixed(2)} TL',
+                    color: item.isSold ? Colors.orange : null),
               ],
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (isProfit ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                color: (isProfit ? Colors.green : Colors.red)
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(item.isSold ? 'Gerçekleşen Kar/Zarar' : 'Potansiyel Kar/Zarar',
-                      style: TextStyle(color: isProfit ? Colors.green : Colors.red, fontSize: 12)),
+                  Text(
+                      item.isSold
+                          ? 'Gerçekleşen Kar/Zarar'
+                          : 'Potansiyel Kar/Zarar',
+                      style: TextStyle(
+                          color: isProfit ? Colors.green : Colors.red,
+                          fontSize: 12)),
                   Text(
                     '${isProfit ? '+' : ''}${item.profitLoss.toStringAsFixed(2)} TL (${isProfit ? '+' : ''}${item.profitLossPercentage.toStringAsFixed(2)}%)',
-                    style: TextStyle(color: isProfit ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: isProfit ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -689,11 +741,15 @@ class _PortfolioCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppTheme.textDim, fontSize: 12)),
+        Text(label,
+            style: const TextStyle(color: AppTheme.textDim, fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(color: color ?? AppTheme.textLight, fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(value,
+            style: TextStyle(
+                color: color ?? AppTheme.textLight,
+                fontWeight: FontWeight.bold,
+                fontSize: 14)),
       ],
     );
   }
 }
-
