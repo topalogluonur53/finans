@@ -1,0 +1,23 @@
+# Finans App Development Rules
+
+These rules have been established to prevent recurring errors, particularly during Flutter/Dart compilation and GitHub Actions deployments.
+
+## 1. Dart Null Safety and Iterable Filtering
+- **NEVER** call properties like `.isEmpty` or `.isNotEmpty` directly on elements within a `.where()` clause if there is a possibility that the element is `null` or `dynamic`.
+- **ALWAYS** use `.whereType<String>()` or an explicit null check (e.g., `value != null && value.isNotEmpty`) when extracting tags or mapped values from objects where the field is nullable (like `Asset.tag`).
+- **Example Error Avoidance:** 
+  Bad: `portfolio.assets.map((a) => a.tag).where((tag) => tag.isNotEmpty)` (Compilation fails because `tag` might be null)
+  Good: `portfolio.assets.map((a) => a.tag).whereType<String>().where((tag) => tag.isNotEmpty)`
+
+## 2. Flutter Widget Syntax and Braces
+- **ALWAYS** double-check the closing braces `}` of your methods and classes. A single missing closing brace in a long file (e.g., `ipo_screen.dart`) will cause the compiler to treat subsequent top-level classes as nested classes, resulting in hundreds of cascade errors (`class_in_class`, `expected_class_member`, etc.).
+- When adding new helper methods (like `_buildPortfolioList`), ensure they are properly enclosed within the `State` class and do not swallow the closing brace of the preceding method.
+
+## 3. GitHub Actions CI/CD Pipeline
+- Keep in mind that the GitHub Actions workflow compiles Docker images for multiple architectures (`linux/amd64`, `linux/arm64`). This process takes **15-20 minutes**.
+- **RULE:** Before making a commit and pushing, always verify your Dart code locally. If possible, run `dart analyze` to catch syntax or null-safety errors beforehand so that the CI/CD pipeline doesn't waste 20 minutes only to fail on a trivial typo.
+
+## 4. Asset Model Tagging
+- The `tag` field in the Django backend and the Flutter `Asset` model is nullable (`String?`). Handled accordingly in the UI by checking `if (a.tag == null)` or during filtering logically.
+
+By following these rules, the deployment process to CasaOS / Raspberry Pi will be smooth and not break due to unverified syntax errors.
