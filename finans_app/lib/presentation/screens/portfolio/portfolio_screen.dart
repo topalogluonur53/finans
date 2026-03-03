@@ -56,25 +56,24 @@ class _PortfolioScreenState extends State<PortfolioScreen>
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
 
-      // Filter assets by selected category
-      final filteredAssets = _selectedCategory == null
-          ? portfolio.assets
-          : portfolio.assets.where((a) {
-              try {
-                final type = AssetType.values.firstWhere((e) =>
-                    e.backendType == a.type ||
-                    e.name.toLowerCase() == a.type.toLowerCase());
-                if (_selectedCategory != null && type.category != _selectedCategory) {
-                  return false;
-                }
-                if (_selectedTag != null && (a.tag == null || a.tag != _selectedTag)) {
-                  return false;
-                }
-                return true;
-              } catch (_) {
-                return false;
-              }
-            }).toList();
+      final filteredAssets = portfolio.assets.where((a) {
+        if (_selectedTag != null && a.tag != _selectedTag) {
+          return false;
+        }
+        if (_selectedCategory != null) {
+          try {
+            final type = AssetType.values.firstWhere((e) =>
+                e.backendType == a.type ||
+                e.name.toLowerCase() == a.type.toLowerCase());
+            if (type.category != _selectedCategory) {
+              return false;
+            }
+          } catch (_) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
 
       // Extract unique tags
       final uniqueTags = portfolio.assets
