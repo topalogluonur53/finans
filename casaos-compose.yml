@@ -16,8 +16,8 @@ x-casaos:
     tr_tr: "Finansal Takip"
   developer: "Onur Topaloğlu"
   author: "Onur Topaloğlu"
-  icon: "https://raw.githubusercontent.com/topalogluonur53/Ofinans/main/finans_app/assets/icons/app_icon.png"
-  thumbnail: "https://raw.githubusercontent.com/topalogluonur53/Ofinans/main/finans_app/assets/icons/app_icon.png"
+  icon: "https://raw.githubusercontent.com/topalogluonur53/finans/main/finans_app/assets/icons/app_icon.png"
+  thumbnail: "https://raw.githubusercontent.com/topalogluonur53/finans/main/finans_app/assets/icons/app_icon.png"
   title:
     en_us: "Finans App"
     tr_tr: "Finans App"
