@@ -6,6 +6,8 @@ import 'package:finans_app/presentation/screens/tools/ipo_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:finans_app/data/models/ipo_news.dart';
+import 'package:finans_app/data/models/ipo_portfolio_item.dart';
+import 'package:finans_app/data/services/ipo_portfolio_service.dart';
 
 class IPOScreen extends StatefulWidget {
   const IPOScreen({super.key});
@@ -21,13 +23,15 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
   List<IPO> _upcomingIPOs = [];
   List<IPO> _recentIPOs = [];
   List<IPONews> _ipoNews = [];
+  List<IPOPortfolioItem> _portfolioItems = [];
+  final IPOPortfolioService _portfolioService = IPOPortfolioService();
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadIPOData();
   }
 
@@ -51,15 +55,18 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
       final results = await Future.wait([
         _service.fetchIPOCalendar(forceRefresh: forceRefresh),
         _service.fetchIPONews(forceRefresh: forceRefresh),
+        _portfolioService.getPortfolio(),
       ]);
       
       final List<IPO> allIPOs = results[0] as List<IPO>;
       final List<IPONews> news = results[1] as List<IPONews>;
+      final List<IPOPortfolioItem> portfolio = results[2] as List<IPOPortfolioItem>;
       
       setState(() {
         _upcomingIPOs = allIPOs.where((ipo) => ipo.isUpcoming).toList();
         _recentIPOs = allIPOs.where((ipo) => !ipo.isUpcoming && !ipo.isWithdrawn).toList();
         _ipoNews = news;
+        _portfolioItems = portfolio;
         _isLoading = false;
       });
     } catch (e) {
@@ -100,8 +107,12 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
               text: 'Son Arzlar (${_recentIPOs.length})',
             ),
             Tab(
+              icon: const Icon(Icons.account_balance_wallet),
+              text: 'Portföyüm',
+            ),
+            Tab(
               icon: const Icon(Icons.newspaper),
-              text: 'Haberler (${_ipoNews.length})',
+              text: 'Haberler',
             ),
           ],
         ),
@@ -115,6 +126,7 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
                   children: [
                     _buildIPOList(_upcomingIPOs, isUpcoming: true),
                     _buildIPOList(_recentIPOs, isUpcoming: false),
+                    _buildPortfolioList(),
                     _buildNewsList(),
                   ],
                 ),
@@ -272,6 +284,97 @@ class _IPOScreenState extends State<IPOScreen> with SingleTickerProviderStateMix
         },
       ),
     );
+  Widget _buildPortfolioList() {
+    if (_portfolioItems.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.account_balance_wallet_outlined, size: 64, color: AppTheme.textDim),
+            const SizedBox(height: 16),
+            const Text('Portföyünüzde henüz halka arz yok', style: TextStyle(color: AppTheme.textDim)),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                _tabController.animateTo(0);
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Yeni Ekle'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            )
+          ],
+        ),
+      );
+    }
+
+    double totalCost = 0;
+    double totalValue = 0;
+    for (var item in _portfolioItems) {
+      totalCost += item.totalCost;
+      totalValue += item.currentValue;
+    }
+    double totalProfit = totalValue - totalCost;
+    double totalProfitPct = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Toplam Kar/Zarar', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                  Text(
+                    '${totalProfit >= 0 ? '+' : ''}${totalProfit.toStringAsFixed(2)} TL',
+                    style: TextStyle(
+                      color: totalProfit >= 0 ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('Getiri Oranı', style: TextStyle(color: AppTheme.textDim, fontSize: 12)),
+                  Text(
+                    '${totalProfitPct >= 0 ? '+' : ''}${totalProfitPct.toStringAsFixed(2)}%',
+                    style: TextStyle(
+                      color: totalProfitPct >= 0 ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _portfolioItems.length,
+            itemBuilder: (context, index) {
+              final item = _portfolioItems[index];
+              return _PortfolioCard(item: item, onRemove: () => _removePortfolioItem(item.symbol));
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _removePortfolioItem(String symbol) async {
+    await _portfolioService.removeParticipant(symbol);
+    _loadIPOData();
   }
 
   void _showInfoDialog() {
@@ -489,3 +592,108 @@ class _IPOCard extends StatelessWidget {
     );
   }
 }
+
+class _PortfolioCard extends StatelessWidget {
+  final IPOPortfolioItem item;
+  final VoidCallback onRemove;
+
+  const _PortfolioCard({required this.item, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    bool isProfit = item.profitLoss >= 0;
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: AppTheme.surfaceDark,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.company,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textLight)),
+                      const SizedBox(height: 4),
+                      Text(item.symbol,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: AppTheme.surfaceDark,
+                        title: const Text('Sil', style: TextStyle(color: AppTheme.textLight)),
+                        content: const Text('Bu kaydı silmek istediğinize emin misiniz?', style: TextStyle(color: AppTheme.textDim)),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('İptal', style: TextStyle(color: Colors.grey))),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              onRemove();
+                            },
+                            child: const Text('Sil', style: TextStyle(color: Colors.red))),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const Divider(color: Colors.white12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatColumn('Adet', '${item.quantity}'),
+                _buildStatColumn('Maliyet', '${item.costPrice.toStringAsFixed(2)} TL'),
+                _buildStatColumn('Güncel', '${item.isSold ? (item.soldPrice ?? 0).toStringAsFixed(2) : item.currentPrice.toStringAsFixed(2)} TL', color: item.isSold ? Colors.orange : null),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (isProfit ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(item.isSold ? 'Gerçekleşen Kar/Zarar' : 'Potansiyel Kar/Zarar',
+                      style: TextStyle(color: isProfit ? Colors.green : Colors.red, fontSize: 12)),
+                  Text(
+                    '${isProfit ? '+' : ''}${item.profitLoss.toStringAsFixed(2)} TL (${isProfit ? '+' : ''}${item.profitLossPercentage.toStringAsFixed(2)}%)',
+                    style: TextStyle(color: isProfit ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: AppTheme.textDim, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(color: color ?? AppTheme.textLight, fontWeight: FontWeight.bold, fontSize: 14)),
+      ],
+    );
+  }
+}
+

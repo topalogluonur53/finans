@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/data/models/ipo.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:finans_app/data/models/ipo_portfolio_item.dart';
+import 'package:finans_app/data/services/ipo_portfolio_service.dart';
 
 class IPODetailScreen extends StatelessWidget {
   final IPO ipo;
@@ -53,6 +55,76 @@ class IPODetailScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _addToPortfolio(BuildContext context) {
+    int quantity = 1;
+    double price = ipo.price ?? 0.0;
+    
+    // Parse priceRange if price is null
+    if (price == 0.0 && ipo.priceRange != null) {
+      try {
+        final matches = RegExp(r'([\d.,]+)').firstMatch(ipo.priceRange!);
+        if (matches != null) {
+          price = double.parse(matches.group(1)!.replaceAll(',', '.'));
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: AppTheme.surfaceDark,
+          title: const Text('Portföye Ekle', style: TextStyle(color: AppTheme.textLight)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                style: const TextStyle(color: AppTheme.textLight),
+                initialValue: '1',
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Adet', labelStyle: TextStyle(color: AppTheme.textDim)),
+                onChanged: (val) => quantity = int.tryParse(val) ?? 1,
+              ),
+              TextFormField(
+                style: const TextStyle(color: AppTheme.textLight),
+                initialValue: price.toString(),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Maliyet Fiyatı', labelStyle: TextStyle(color: AppTheme.textDim)),
+                onChanged: (val) => price = double.tryParse(val) ?? price,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final item = IPOPortfolioItem(
+                  symbol: ipo.symbol,
+                  company: ipo.company,
+                  quantity: quantity,
+                  costPrice: price,
+                  currentPrice: ipo.price ?? price, // If current price is not known, fallback to cost
+                );
+                final service = IPOPortfolioService();
+                await service.addParticipant(item);
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Portföye eklendi. Listeyi yenileyin.')));
+                }
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -194,7 +266,27 @@ class IPODetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _addToPortfolio(context),
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                label: const Text(
+                  'Portföyüme Ekle',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             if (ipo.url != null)
               SizedBox(
                 width: double.infinity,

@@ -21,6 +21,7 @@ class PortfolioScreen extends StatefulWidget {
 class _PortfolioScreenState extends State<PortfolioScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String? _selectedTag;
 
   static const _tabs = [
     (label: 'Tümü', category: null),
@@ -63,11 +64,25 @@ class _PortfolioScreenState extends State<PortfolioScreen>
                 final type = AssetType.values.firstWhere((e) =>
                     e.backendType == a.type ||
                     e.name.toLowerCase() == a.type.toLowerCase());
-                return type.category == _selectedCategory;
+                if (_selectedCategory != null && type.category != _selectedCategory) {
+                  return false;
+                }
+                if (_selectedTag != null && (a.tag == null || a.tag != _selectedTag)) {
+                  return false;
+                }
+                return true;
               } catch (_) {
                 return false;
               }
             }).toList();
+
+      // Extract unique tags
+      final uniqueTags = portfolio.assets
+          .map((a) => a.tag)
+          .where((tag) => tag != null && tag.isNotEmpty)
+          .map((tag) => tag!)
+          .toSet()
+          .toList();
 
       double binanceValue = (binance.totalUsdtBalance ?? 0) *
           (market.usdTryRate > 0 ? market.usdTryRate : 1.0);
@@ -161,6 +176,55 @@ class _PortfolioScreenState extends State<PortfolioScreen>
                   .toList(),
             ),
           ),
+
+          // ─── Tag Filter List ──────────────────────────────────────────
+          if (uniqueTags.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: const Text('Tüm Etiketler'),
+                      selected: _selectedTag == null,
+                      onSelected: (selected) {
+                        setState(() => _selectedTag = null);
+                      },
+                      backgroundColor: AppTheme.surfaceDark,
+                      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                      labelStyle: TextStyle(
+                          color: _selectedTag == null ? AppTheme.primaryColor : AppTheme.textDim,
+                          fontWeight: _selectedTag == null ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 12),
+                    ),
+                  ),
+                  ...uniqueTags.map((tag) {
+                    final isSelected = _selectedTag == tag;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(tag),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() => _selectedTag = selected ? tag : null);
+                        },
+                        backgroundColor: AppTheme.surfaceDark,
+                        selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        labelStyle: TextStyle(
+                            color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontSize: 12),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
 
           // ─── Asset List ───────────────────────────────────────────────
           Expanded(

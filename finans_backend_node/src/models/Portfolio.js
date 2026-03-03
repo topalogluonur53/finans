@@ -33,6 +33,9 @@ const Asset = sequelize.define('Asset', {
     },
     notes: {
         type: DataTypes.TEXT
+    },
+    tag: {
+        type: DataTypes.STRING(50)
     }
 });
 

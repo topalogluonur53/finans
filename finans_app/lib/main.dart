@@ -40,6 +40,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +60,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
-      // Arka plana geçince kilitle
-      context.read<AuthProvider>().lockScreen();
+      // Arka plana geçince veya cihaz kilitlenince kilitle
+      final currentContext = _navigatorKey.currentContext;
+      if (currentContext != null) {
+        currentContext.read<AuthProvider>().lockScreen();
+      }
     } else if (state == AppLifecycleState.resumed) {
       // Ön plana dönünce; zaten kilitliyse LockScreen gösterilecek
       // (ekstra bir şey yapmaya gerek yok)
@@ -91,6 +96,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         builder: (context, auth, _) {
           print('Main: Building application... isLoading=${auth.isLoading}, isAuthenticated=${auth.isAuthenticated}');
           return MaterialApp(
+            navigatorKey: _navigatorKey,
             title: 'Finans App',
             theme: AppTheme.darkTheme,
             builder: (context, child) {
@@ -160,13 +166,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               // Kilit ekranı kontrolü
               if (auth.isAuthenticated && auth.isLocked) {
                 return const LockScreen();
-              }
-              // Aktif ve giriş yapılmış — kullanıcı dokunuşlarını yakala
-              if (auth.isAuthenticated && !auth.isLocked) {
-                return InactivityDetector(
-                  onActivity: () => auth.resetInactivityTimer(),
-                  child: child!,
-                );
               }
               return child!;
             },

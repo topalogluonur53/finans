@@ -44,16 +44,12 @@ class AuthProvider extends ChangeNotifier {
 
   /// Kullanıcı etkileşimi gerçekleşince çağrılır — timer'ı sıfırlar.
   void resetInactivityTimer() {
-    if (!isAuthenticated || _isLocked) return;
-    _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(_kInactivityTimeout, _lockDueToInactivity);
+    // İptal edildi: Cihaz kilitlenmeden/arka plana alınmadan şifre istememesi
+    // istendiği için zaman aşımı kilidi pasifleştirildi.
   }
 
   void _lockDueToInactivity() {
-    if (isAuthenticated && !_isLocked) {
-      _isLocked = true;
-      notifyListeners();
-    }
+    // Kullanılmıyor
   }
 
   /// Uygulama arka plana geçince veya çıkış yapılınca kilitle.

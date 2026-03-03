@@ -25,6 +25,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   final _quantityController = TextEditingController();
   final _priceController = TextEditingController();
   final _notesController = TextEditingController();
+  final _tagController = TextEditingController();
 
   // State
   AssetCategory? _selectedCategory;
@@ -42,6 +43,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       _quantityController.text = asset.quantity.toString().replaceAll('.', ',');
       _priceController.text = asset.purchasePrice.toString().replaceAll('.', ',');
       _notesController.text = asset.notes ?? '';
+      _tagController.text = asset.tag ?? '';
       _selectedDate = asset.purchaseDate;
       try {
         _selectedType = AssetType.values.firstWhere((e) =>
@@ -59,6 +61,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     _quantityController.dispose();
     _priceController.dispose();
     _notesController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -95,6 +98,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
           purchasePrice: double.parse(_priceController.text.replaceAll(',', '.')),
           purchaseDate: _selectedDate,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
+          tag: _tagController.text.isEmpty ? null : _tagController.text,
         );
 
         final success = widget.assetToEdit == null
@@ -434,6 +438,19 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                   controller: _notesController,
                   label: 'Not',
                   icon: Icons.note_outlined,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Row 4: Tag
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactTextField(
+                  controller: _tagController,
+                  label: 'Etiket',
+                  icon: Icons.label_outline,
                 ),
               ),
             ],
