@@ -15,7 +15,7 @@ class LoanScenario {
   double monthlyPayment = 0;
   double totalPayment = 0;
   double totalInterest = 0;
-  List<_AmortizationRow> schedule = [];
+  List<AmortizationRow> schedule = [];
 
   LoanScenario({
     required this.name,
@@ -77,9 +77,10 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
 
   void _calculate(LoanScenario s) {
     // Tutar stringindeki noktaları (binlik ayracı) silip ondalık ayracı olarak saklanmış virgülü noktaya çeviriyoruz
-    final amountText = s.amountCtrl.text.replaceAll('.', '').replaceAll(',', '.');
+    final amountText =
+        s.amountCtrl.text.replaceAll('.', '').replaceAll(',', '.');
     final principal = double.tryParse(amountText) ?? 0;
-    
+
     // Faiz metnindeki virgülü noktaya çevir, nokta varsa bırak
     double rate = double.tryParse(s.rateCtrl.text.replaceAll(',', '.')) ?? 0;
     if (!_isMonthlyRate) rate = rate / 12; // convert annual to monthly
@@ -99,7 +100,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
     final powFactor = pow(1 + monthlyRate, months).toDouble();
     final monthly = principal * monthlyRate * powFactor / (powFactor - 1);
 
-    List<_AmortizationRow> schedule = [];
+    List<AmortizationRow> schedule = [];
     double remainingBalance = principal;
 
     for (int i = 1; i <= months; i++) {
@@ -108,7 +109,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
       remainingBalance -= principalPayment;
       if (remainingBalance < 0) remainingBalance = 0;
 
-      schedule.add(_AmortizationRow(
+      schedule.add(AmortizationRow(
         month: i,
         payment: monthly,
         principalPart: principalPayment,
@@ -202,11 +203,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
             const SizedBox(height: 12),
             // Schedule toggle
             OutlinedButton.icon(
-              onPressed: () =>
-                  setState(() => _showSchedule = !_showSchedule),
-              icon: Icon(_showSchedule
-                  ? Icons.expand_less
-                  : Icons.expand_more),
+              onPressed: () => setState(() => _showSchedule = !_showSchedule),
+              icon: Icon(_showSchedule ? Icons.expand_less : Icons.expand_more),
               label: Text(_showSchedule
                   ? 'Ödeme Planını Gizle'
                   : 'Ödeme Planını Göster'),
@@ -284,7 +282,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
             const SizedBox(height: 12),
             TextField(
               controller: s.amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: false),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: false),
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 _ThousandsSeparatorInputFormatter(),
@@ -299,19 +298,22 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
             const SizedBox(height: 10),
             TextField(
               controller: s.rateCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 TextInputFormatter.withFunction((oldValue, newValue) {
                   // Kullanıcı nokta girerse onu virgüle çevir
                   return newValue.copyWith(
                     text: newValue.text.replaceAll('.', ','),
-                    selection: TextSelection.collapsed(
-                        offset: newValue.selection.end),
+                    selection:
+                        TextSelection.collapsed(offset: newValue.selection.end),
                   );
                 }),
               ],
               decoration: InputDecoration(
-                labelText: _isMonthlyRate ? 'Aylık Faiz Oranı (%)' : 'Yıllık Faiz Oranı (%)',
+                labelText: _isMonthlyRate
+                    ? 'Aylık Faiz Oranı (%)'
+                    : 'Yıllık Faiz Oranı (%)',
                 prefixIcon: const Icon(Icons.percent, size: 18),
                 isDense: compact,
               ),
@@ -404,7 +406,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _LegendDot(
+                    const _LegendDot(
                         color: AppTheme.secondaryColor, label: 'Ana Para'),
                     _LegendDot(
                         color: AppTheme.errorColor.withValues(alpha: 0.7),
@@ -474,8 +476,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
             Row(
               children: [
                 const Text('Karşılaştırma',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 Container(
                   padding:
@@ -544,8 +546,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Ödeme Planı',
-                style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -555,8 +556,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
                     fontSize: 12),
-                dataTextStyle: const TextStyle(
-                    fontSize: 12, color: AppTheme.textLight),
+                dataTextStyle:
+                    const TextStyle(fontSize: 12, color: AppTheme.textLight),
                 columns: const [
                   DataColumn(label: Text('Ay')),
                   DataColumn(label: Text('Taksit')),
@@ -568,12 +569,10 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
                   return DataRow(cells: [
                     DataCell(Text('${row.month}')),
                     DataCell(Text(Formatters.formatMoney(row.payment))),
+                    DataCell(Text(Formatters.formatMoney(row.principalPart))),
+                    DataCell(Text(Formatters.formatMoney(row.interestPart))),
                     DataCell(
-                        Text(Formatters.formatMoney(row.principalPart))),
-                    DataCell(
-                        Text(Formatters.formatMoney(row.interestPart))),
-                    DataCell(Text(
-                        Formatters.formatMoney(row.remainingBalance))),
+                        Text(Formatters.formatMoney(row.remainingBalance))),
                   ]);
                 }).toList(),
               ),
@@ -625,8 +624,7 @@ class _LegendDot extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(label,
-            style:
-                const TextStyle(fontSize: 11, color: AppTheme.textDim)),
+            style: const TextStyle(fontSize: 11, color: AppTheme.textDim)),
       ],
     );
   }
@@ -673,8 +671,7 @@ class _CompareRow extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(label,
-                style: const TextStyle(
-                    fontSize: 13, color: AppTheme.textDim)),
+                style: const TextStyle(fontSize: 13, color: AppTheme.textDim)),
           ),
           Expanded(
             flex: 3,
@@ -682,9 +679,7 @@ class _CompareRow extends StatelessWidget {
               valueA,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: aColor),
+                  fontSize: 13, fontWeight: FontWeight.bold, color: aColor),
             ),
           ),
           Expanded(
@@ -693,9 +688,7 @@ class _CompareRow extends StatelessWidget {
               valueB,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: bColor),
+                  fontSize: 13, fontWeight: FontWeight.bold, color: bColor),
             ),
           ),
         ],
@@ -704,14 +697,14 @@ class _CompareRow extends StatelessWidget {
   }
 }
 
-class _AmortizationRow {
+class AmortizationRow {
   final int month;
   final double payment;
   final double principalPart;
   final double interestPart;
   final double remainingBalance;
 
-  _AmortizationRow({
+  AmortizationRow({
     required this.month,
     required this.payment,
     required this.principalPart,
@@ -727,7 +720,7 @@ class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
     if (newValue.text.isEmpty) {
       return newValue.copyWith(text: '');
     }
-    
+
     // Sadece rakamları al
     String numbers = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (numbers.isEmpty) return newValue.copyWith(text: '');

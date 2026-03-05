@@ -34,7 +34,7 @@ class AppTheme {
         color: surfaceDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 6,
-        shadowColor: const Color(0xFF002F6C).withOpacity(0.08),
+        shadowColor: const Color(0xFF002F6C).withValues(alpha: 0.08),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF002F6C), // Koyu Lacivert (Header / AppBar için)
@@ -79,7 +79,7 @@ class AppTheme {
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         labelStyle: const TextStyle(color: textDim, fontWeight: FontWeight.w600),
-        hintStyle: TextStyle(color: textDim.withOpacity(0.5)),
+        hintStyle: TextStyle(color: textDim.withValues(alpha: 0.5)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

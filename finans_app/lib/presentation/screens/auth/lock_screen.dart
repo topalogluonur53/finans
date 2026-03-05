@@ -369,7 +369,7 @@ class _LockScreenState extends State<LockScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white38, width: 2),
                 ),
@@ -502,7 +502,7 @@ class _LockScreenState extends State<LockScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -753,7 +753,7 @@ class _NumKeyState extends State<_NumKey>
         width: 80, height: 80,
         child: Center(
           child: widget.icon != null
-              ? Icon(widget.icon, size: 28, color: Colors.white.withOpacity(0.5))
+              ? Icon(widget.icon, size: 28, color: Colors.white.withValues(alpha: 0.5))
               : null,
         ),
       );
@@ -769,18 +769,18 @@ class _NumKeyState extends State<_NumKey>
         builder: (context, _) {
           final t = _brightnessAnim.value;
           final bgColor = Color.lerp(
-            Colors.white.withOpacity(0.22),
-            Colors.white.withOpacity(0.09),
+            Colors.white.withValues(alpha: 0.22),
+            Colors.white.withValues(alpha: 0.09),
             t,
           )!;
           final textColor = Color.lerp(
             Colors.white,
-            Colors.white.withOpacity(0.7),
+            Colors.white.withValues(alpha: 0.7),
             t,
           )!;
           final subColor = Color.lerp(
-            Colors.white.withOpacity(0.55),
-            Colors.white.withOpacity(0.3),
+            Colors.white.withValues(alpha: 0.55),
+            Colors.white.withValues(alpha: 0.3),
             t,
           )!;
 
@@ -796,7 +796,7 @@ class _NumKeyState extends State<_NumKey>
                     ? []
                     : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

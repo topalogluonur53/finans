@@ -95,10 +95,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final income  = prov.totalMonthlyIncome;
+    final income = prov.totalMonthlyIncome;
     final expense = prov.totalMonthlyExpense;
-    final net     = prov.monthlyNet;
-    final isPos   = net >= 0;
+    final net = prov.monthlyNet;
+    final isPos = net >= 0;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -114,7 +114,7 @@ class _SummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isPos ? Colors.blue : Colors.red).withOpacity(0.25),
+            color: (isPos ? Colors.blue : Colors.red).withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -125,7 +125,8 @@ class _SummaryCard extends StatelessWidget {
         children: [
           const Text(
             'Aylık Sabit Net',
-            style: TextStyle(color: Colors.white60, fontSize: 12, letterSpacing: 0.5),
+            style: TextStyle(
+                color: Colors.white60, fontSize: 12, letterSpacing: 0.5),
           ),
           const SizedBox(height: 6),
           Row(
@@ -189,7 +190,7 @@ class _MiniStat extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -201,13 +202,11 @@ class _MiniStat extends StatelessWidget {
               children: [
                 Text(label,
                     style: TextStyle(
-                        color: color.withOpacity(0.8), fontSize: 10)),
+                        color: color.withValues(alpha: 0.8), fontSize: 10)),
                 Text(
                   Formatters.formatMoney(value),
                   style: TextStyle(
-                      color: color,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700),
+                      color: color, fontSize: 14, fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -240,21 +239,22 @@ class _RecurringList extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              _isIncome ? Icons.savings_outlined : Icons.credit_card_off_outlined,
+              _isIncome
+                  ? Icons.savings_outlined
+                  : Icons.credit_card_off_outlined,
               size: 64,
-              color: AppTheme.textDim.withOpacity(0.4),
+              color: AppTheme.textDim.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
             Text(
-              _isIncome
-                  ? 'Sabit gelir eklenmemiş.'
-                  : 'Sabit gider eklenmemiş.',
-              style: TextStyle(color: AppTheme.textDim, fontSize: 15),
+              _isIncome ? 'Sabit gelir eklenmemiş.' : 'Sabit gider eklenmemiş.',
+              style: const TextStyle(color: AppTheme.textDim, fontSize: 15),
             ),
             const SizedBox(height: 8),
             Text(
               '+ butonuna basarak ekleyin',
-              style: TextStyle(color: AppTheme.textDim.withOpacity(0.6), fontSize: 13),
+              style: TextStyle(
+                  color: AppTheme.textDim.withValues(alpha: 0.6), fontSize: 13),
             ),
           ],
         ),
@@ -283,9 +283,9 @@ class _RecurringCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov    = context.read<RecurringProvider>();
+    final prov = context.read<RecurringProvider>();
     final isIncome = item.type == 'INCOME';
-    final dateFmt  = DateFormat('dd MMM yyyy', 'tr_TR');
+    final dateFmt = DateFormat('dd MMM yyyy', 'tr_TR');
 
     return Dismissible(
       key: ValueKey('rec_${item.id}'),
@@ -322,8 +322,8 @@ class _RecurringCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: item.isActive
-                  ? color.withOpacity(0.25)
-                  : Colors.grey.withOpacity(0.15),
+                  ? color.withValues(alpha: 0.25)
+                  : Colors.grey.withValues(alpha: 0.15),
             ),
           ),
           child: Row(
@@ -333,7 +333,8 @@ class _RecurringCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: (item.isActive ? color : Colors.grey).withOpacity(0.12),
+                  color: (item.isActive ? color : Colors.grey)
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -357,9 +358,8 @@ class _RecurringCard extends StatelessWidget {
                         color: item.isActive
                             ? AppTheme.textLight
                             : AppTheme.textDim,
-                        decoration: item.isActive
-                            ? null
-                            : TextDecoration.lineThrough,
+                        decoration:
+                            item.isActive ? null : TextDecoration.lineThrough,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -369,7 +369,7 @@ class _RecurringCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.12),
+                            color: color.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -383,12 +383,12 @@ class _RecurringCard extends StatelessWidget {
                         // Tarih aralığı göstergesi
                         if (item.endDate != null) ...[
                           const SizedBox(width: 6),
-                          Icon(Icons.event_busy_outlined,
+                          const Icon(Icons.event_busy_outlined,
                               size: 11, color: AppTheme.textDim),
                           const SizedBox(width: 2),
                           Text(
                             dateFmt.format(item.endDate!),
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 10, color: AppTheme.textDim),
                           ),
                         ],
@@ -398,7 +398,7 @@ class _RecurringCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               item.description!,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 11, color: AppTheme.textDim),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -426,8 +426,8 @@ class _RecurringCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '≈ ${Formatters.formatMoney(item.monthlyAmount)}/ay',
-                    style: TextStyle(
-                        fontSize: 10, color: AppTheme.textDim),
+                    style:
+                        const TextStyle(fontSize: 10, color: AppTheme.textDim),
                   ),
                 ],
               ),
@@ -486,8 +486,8 @@ class _RecurringCard extends StatelessWidget {
               child: const Text('İptal')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sil',
-                  style: TextStyle(color: Colors.redAccent))),
+              child:
+                  const Text('Sil', style: TextStyle(color: Colors.redAccent))),
         ],
       ),
     );
@@ -518,20 +518,28 @@ class _RecurringCard extends StatelessWidget {
   IconData _iconFor(String category) {
     final c = category.toLowerCase();
     if (c.contains('kira')) return Icons.home_outlined;
-    if (c.contains('maaş') || c.contains('maas'))
+    if (c.contains('maaş') || c.contains('maas')) {
       return Icons.work_outline;
+    }
     if (c.contains('elektrik')) return Icons.bolt_outlined;
-    if (c.contains('fatura') || c.contains('su') || c.contains('doğalgaz'))
+    if (c.contains('fatura') || c.contains('su') || c.contains('doğalgaz')) {
       return Icons.receipt_outlined;
-    if (c.contains('internet') || c.contains('telefon'))
+    }
+    if (c.contains('internet') || c.contains('telefon')) {
       return Icons.wifi_outlined;
-    if (c.contains('abonelik') || c.contains('netflix') || c.contains('spotify'))
+    }
+    if (c.contains('abonelik') ||
+        c.contains('netflix') ||
+        c.contains('spotify')) {
       return Icons.subscriptions_outlined;
+    }
     if (c.contains('sigorta')) return Icons.security_outlined;
-    if (c.contains('kredi') || c.contains('taksit'))
+    if (c.contains('kredi') || c.contains('taksit')) {
       return Icons.credit_card_outlined;
-    if (c.contains('yatırım') || c.contains('birikim'))
+    }
+    if (c.contains('yatırım') || c.contains('birikim')) {
       return Icons.savings_outlined;
+    }
     return item.type == 'INCOME'
         ? Icons.arrow_circle_up_outlined
         : Icons.arrow_circle_down_outlined;
@@ -566,7 +574,7 @@ class _RecurringDetail extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14)),
                 child: Icon(
                     isIncome
@@ -585,8 +593,7 @@ class _RecurringDetail extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.w700)),
-                    Text(
-                        isIncome ? 'Sabit Gelir' : 'Sabit Gider',
+                    Text(isIncome ? 'Sabit Gelir' : 'Sabit Gider',
                         style: TextStyle(color: color, fontSize: 13)),
                   ],
                 ),
@@ -594,15 +601,16 @@ class _RecurringDetail extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _Row('Tutar', Formatters.formatMoney(item.amount)),
-          _Row('Periyot', RecurringTransaction.periodLabel(item.period)),
-          _Row('Aylık Eşdeğer', Formatters.formatMoney(item.monthlyAmount)),
-          _Row('Başlangıç', dateFmt.format(item.startDate)),
+          _detailRow('Tutar', Formatters.formatMoney(item.amount)),
+          _detailRow('Periyot', RecurringTransaction.periodLabel(item.period)),
+          _detailRow(
+              'Aylık Eşdeğer', Formatters.formatMoney(item.monthlyAmount)),
+          _detailRow('Başlangıç', dateFmt.format(item.startDate)),
           if (item.endDate != null)
-            _Row('Bitiş', dateFmt.format(item.endDate!)),
-          _Row('Durum', item.isActive ? 'Aktif ✓' : 'Pasif ✗'),
+            _detailRow('Bitiş', dateFmt.format(item.endDate!)),
+          _detailRow('Durum', item.isActive ? 'Aktif ✓' : 'Pasif ✗'),
           if (item.description != null && item.description!.isNotEmpty)
-            _Row('Not', item.description!),
+            _detailRow('Not', item.description!),
           const SizedBox(height: 20),
           // Düzenle butonu
           Row(
@@ -610,7 +618,7 @@ class _RecurringDetail extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: color.withOpacity(0.6)),
+                    side: BorderSide(color: color.withValues(alpha: 0.6)),
                     foregroundColor: color,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
@@ -653,7 +661,7 @@ class _RecurringDetail extends StatelessWidget {
     );
   }
 
-  Widget _Row(String label, String value) => Padding(
+  Widget _detailRow(String label, String value) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -662,7 +670,9 @@ class _RecurringDetail extends StatelessWidget {
                 style: const TextStyle(color: Colors.white54, fontSize: 14)),
             Text(value,
                 style: const TextStyle(
-                    color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       );
@@ -673,7 +683,8 @@ class _RecurringDetail extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class AddRecurringSheet extends StatefulWidget {
   final String initialType; // 'INCOME' | 'EXPENSE'
-  final RecurringTransaction? editItem; // null → yeni kayıt, non-null → düzenleme
+  final RecurringTransaction?
+      editItem; // null → yeni kayıt, non-null → düzenleme
   const AddRecurringSheet({
     super.key,
     required this.initialType,
@@ -686,26 +697,40 @@ class AddRecurringSheet extends StatefulWidget {
 
 class _AddRecurringSheetState extends State<AddRecurringSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _amountCtrl  = TextEditingController();
+  final _amountCtrl = TextEditingController();
   final _categoryCtrl = TextEditingController();
-  final _descCtrl    = TextEditingController();
+  final _descCtrl = TextEditingController();
 
   late String _type;
   String _period = 'MONTHLY';
   DateTime _startDate = DateTime.now();
-  DateTime? _endDate;          // null → süresiz
+  DateTime? _endDate; // null → süresiz
   bool _saving = false;
 
   bool get _isEditing => widget.editItem != null;
 
   static const _periods = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
   static const _incomeCategories = [
-    'Maaş', 'Serbest Meslek', 'Kira Geliri', 'Yatırım Getirisi',
-    'Emekli Maaşı', 'Freelance', 'Diğer',
+    'Maaş',
+    'Serbest Meslek',
+    'Kira Geliri',
+    'Yatırım Getirisi',
+    'Emekli Maaşı',
+    'Freelance',
+    'Diğer',
   ];
   static const _expenseCategories = [
-    'Kira', 'Elektrik', 'Su', 'Doğalgaz', 'İnternet', 'Telefon',
-    'Kredi Taksiti', 'Sigorta', 'Abonelik', 'Ulaşım', 'Diğer',
+    'Kira',
+    'Elektrik',
+    'Su',
+    'Doğalgaz',
+    'İnternet',
+    'Telefon',
+    'Kredi Taksiti',
+    'Sigorta',
+    'Abonelik',
+    'Ulaşım',
+    'Diğer',
   ];
 
   @override
@@ -716,13 +741,13 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
     // Düzenleme modunda alanları önceden doldur
     if (_isEditing) {
       final e = widget.editItem!;
-      _type            = e.type;
-      _period          = e.period;
-      _startDate       = e.startDate;
-      _endDate         = e.endDate;
+      _type = e.type;
+      _period = e.period;
+      _startDate = e.startDate;
+      _endDate = e.endDate;
       _amountCtrl.text = e.amount.toStringAsFixed(2).replaceAll('.', ',');
       _categoryCtrl.text = e.category;
-      _descCtrl.text   = e.description ?? '';
+      _descCtrl.text = e.description ?? '';
     }
   }
 
@@ -812,7 +837,9 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        _isEditing ? 'Sabit İşlemi Düzenle' : 'Sabit İşlem Ekle',
+                        _isEditing
+                            ? 'Sabit İşlemi Düzenle'
+                            : 'Sabit İşlem Ekle',
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -824,9 +851,10 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _color.withOpacity(0.15),
+                          color: _color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: _color.withOpacity(0.4)),
+                          border:
+                              Border.all(color: _color.withValues(alpha: 0.4)),
                         ),
                         child: Text(
                           'Düzenleme',
@@ -863,7 +891,7 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                 const SizedBox(height: 20),
 
                 // ── Kategori ────────────────────────────────────────────────
-                Text('Kategori',
+                const Text('Kategori',
                     style: TextStyle(
                         color: AppTheme.textDim,
                         fontSize: 12,
@@ -881,7 +909,9 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 7),
                         decoration: BoxDecoration(
-                          color: sel ? _color.withOpacity(0.18) : Colors.white10,
+                          color: sel
+                              ? _color.withValues(alpha: 0.18)
+                              : Colors.white10,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: sel ? _color : Colors.transparent,
@@ -891,7 +921,8 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                             style: TextStyle(
                               color: sel ? _color : Colors.white70,
                               fontSize: 13,
-                              fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
+                              fontWeight:
+                                  sel ? FontWeight.w600 : FontWeight.w400,
                             )),
                       ),
                     );
@@ -912,7 +943,9 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                 TextFormField(
                   controller: _amountCtrl,
                   style: const TextStyle(
-                      color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
@@ -921,15 +954,16 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                   decoration: _inputDeco('0,00  ₺', _color),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Tutar zorunlu';
-                    if (double.tryParse(v.replaceAll(',', '.')) == null)
+                    if (double.tryParse(v.replaceAll(',', '.')) == null) {
                       return 'Geçerli bir tutar girin';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
 
                 // ── Periyot ─────────────────────────────────────────────────
-                Text('Tekrar Sıklığı',
+                const Text('Tekrar Sıklığı',
                     style: TextStyle(
                         color: AppTheme.textDim,
                         fontSize: 12,
@@ -946,7 +980,9 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                           margin: const EdgeInsets.only(right: 6),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: sel ? _color.withOpacity(0.2) : Colors.white10,
+                            color: sel
+                                ? _color.withValues(alpha: 0.2)
+                                : Colors.white10,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: sel ? _color : Colors.transparent,
@@ -964,9 +1000,8 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                                 style: TextStyle(
                                   color: sel ? _color : Colors.white54,
                                   fontSize: 11,
-                                  fontWeight: sel
-                                      ? FontWeight.w700
-                                      : FontWeight.w400,
+                                  fontWeight:
+                                      sel ? FontWeight.w700 : FontWeight.w400,
                                 ),
                               ),
                             ],
@@ -979,7 +1014,7 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                 const SizedBox(height: 16),
 
                 // ── Tarih Aralığı ────────────────────────────────────────────
-                Text('Tarih Aralığı',
+                const Text('Tarih Aralığı',
                     style: TextStyle(
                         color: AppTheme.textDim,
                         fontSize: 12,
@@ -1033,13 +1068,13 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: _endDate != null
-                              ? Colors.red.withOpacity(0.15)
-                              : _color.withOpacity(0.15),
+                              ? Colors.red.withValues(alpha: 0.15)
+                              : _color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _endDate != null
-                                ? Colors.red.withOpacity(0.4)
-                                : _color.withOpacity(0.4),
+                                ? Colors.red.withValues(alpha: 0.4)
+                                : _color.withValues(alpha: 0.4),
                           ),
                         ),
                         child: Icon(
@@ -1119,11 +1154,16 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
 
   String _periodEmoji(String p) {
     switch (p) {
-      case 'DAILY':   return '📅';
-      case 'WEEKLY':  return '📆';
-      case 'MONTHLY': return '🗓️';
-      case 'YEARLY':  return '📊';
-      default:        return '📅';
+      case 'DAILY':
+        return '📅';
+      case 'WEEKLY':
+        return '📆';
+      case 'MONTHLY':
+        return '🗓️';
+      case 'YEARLY':
+        return '📊';
+      default:
+        return '📅';
     }
   }
 
@@ -1144,15 +1184,15 @@ class _AddRecurringSheetState extends State<AddRecurringSheet> {
     }
 
     final item = RecurringTransaction(
-      id:          _isEditing ? widget.editItem!.id : null,
-      type:        _type,
-      category:    _categoryCtrl.text.trim(),
-      amount:      double.parse(_amountCtrl.text.replaceAll(',', '.')),
-      period:      _period,
+      id: _isEditing ? widget.editItem!.id : null,
+      type: _type,
+      category: _categoryCtrl.text.trim(),
+      amount: double.parse(_amountCtrl.text.replaceAll(',', '.')),
+      period: _period,
       description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-      startDate:   _startDate,
-      endDate:     _endDate,
-      isActive:    _isEditing ? widget.editItem!.isActive : true,
+      startDate: _startDate,
+      endDate: _endDate,
+      isActive: _isEditing ? widget.editItem!.isActive : true,
     );
 
     final prov = context.read<RecurringProvider>();
@@ -1220,8 +1260,7 @@ class _DateTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: const TextStyle(
-                      color: Colors.white38, fontSize: 10)),
+                  style: const TextStyle(color: Colors.white38, fontSize: 10)),
               const SizedBox(height: 2),
               Text(dateText,
                   style: const TextStyle(color: Colors.white, fontSize: 14)),
@@ -1259,7 +1298,7 @@ class _TypeBtn extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.18) : Colors.white10,
+            color: selected ? color.withValues(alpha: 0.18) : Colors.white10,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
                 color: selected ? color : Colors.transparent, width: 1.5),

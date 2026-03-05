@@ -40,7 +40,8 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       _nameController.text = asset.name;
       _symbolController.text = asset.symbol ?? '';
       _quantityController.text = asset.quantity.toString().replaceAll('.', ',');
-      _priceController.text = asset.purchasePrice.toString().replaceAll('.', ',');
+      _priceController.text =
+          asset.purchasePrice.toString().replaceAll('.', ',');
       _notesController.text = asset.notes ?? '';
       _selectedDate = asset.purchaseDate;
       try {
@@ -80,6 +81,8 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
         return;
       }
 
+      final portfolioProvider =
+          Provider.of<PortfolioProvider>(context, listen: false);
       setState(() => _isLoading = true);
 
       try {
@@ -92,29 +95,32 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
           symbol:
               _symbolController.text.isEmpty ? null : _symbolController.text,
           quantity: double.parse(_quantityController.text.replaceAll(',', '.')),
-          purchasePrice: double.parse(_priceController.text.replaceAll(',', '.')),
+          purchasePrice:
+              double.parse(_priceController.text.replaceAll(',', '.')),
           purchaseDate: _selectedDate,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
         );
 
         final success = widget.assetToEdit == null
-            ? await Provider.of<PortfolioProvider>(context, listen: false)
-                .addAsset(asset)
-            : await Provider.of<PortfolioProvider>(context, listen: false)
-                .updateAsset(asset);
+            ? await portfolioProvider.addAsset(asset)
+            : await portfolioProvider.updateAsset(asset);
 
         if (mounted) {
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text(widget.assetToEdit == null ? 'Varlık başarıyla eklendi!' : 'Varlık başarıyla güncellendi!'),
+                  content: Text(widget.assetToEdit == null
+                      ? 'Varlık başarıyla eklendi!'
+                      : 'Varlık başarıyla güncellendi!'),
                   backgroundColor: Colors.green),
             );
             Navigator.pop(context);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text(widget.assetToEdit == null ? 'Varlık eklenirken hata oluştu.' : 'Varlık güncellenirken hata oluştu.'),
+                  content: Text(widget.assetToEdit == null
+                      ? 'Varlık eklenirken hata oluştu.'
+                      : 'Varlık güncellenirken hata oluştu.'),
                   backgroundColor: Colors.red),
             );
           }
@@ -175,35 +181,14 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     });
   }
 
-  InputDecoration _customInputDecoration({required String labelText, required IconData prefixIcon, String? hintText}) {
-    return InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      prefixIcon: Icon(prefixIcon, color: AppTheme.primaryColor.withOpacity(0.7)),
-      filled: true,
-      fillColor: AppTheme.backgroundDark,
-      labelStyle: const TextStyle(color: AppTheme.textDim),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppTheme.textDim.withOpacity(0.1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        title: Text(widget.assetToEdit == null ? 'Varlık Ekle' : 'Varlık Düzenle', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+            widget.assetToEdit == null ? 'Varlık Ekle' : 'Varlık Düzenle',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -219,22 +204,22 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               _buildCompactSectionTitle('Kategori', Icons.category_rounded),
               const SizedBox(height: 8),
               _buildCategoryScroll(),
-              
               const SizedBox(height: 16),
-              _buildCompactSectionTitle('Varlık Türü', Icons.inventory_2_rounded),
+              _buildCompactSectionTitle(
+                  'Varlık Türü', Icons.inventory_2_rounded),
               const SizedBox(height: 8),
               _selectedCategory == null
                   ? const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text('Lütfen önce bir kategori seçin.', style: TextStyle(color: AppTheme.textDim, fontSize: 13)),
+                      child: Text('Lütfen önce bir kategori seçin.',
+                          style:
+                              TextStyle(color: AppTheme.textDim, fontSize: 13)),
                     )
                   : _buildTypeScroll(),
-
               const SizedBox(height: 20),
               _buildCompactSectionTitle('Detaylar', Icons.edit_document),
               const SizedBox(height: 8),
               _buildCompactDetailsForm(),
-              
               const SizedBox(height: 24),
               DynamicButton(
                 label: widget.assetToEdit == null ? 'Kaydet' : 'Güncelle',
@@ -257,7 +242,10 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
         const SizedBox(width: 6),
         Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight, fontSize: 15),
+          style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textLight,
+              fontSize: 15),
         ),
       ],
     );
@@ -281,14 +269,17 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               selected: isSelected,
               onSelected: (_) => _onCategoryChanged(category),
               backgroundColor: AppTheme.surfaceDark,
-              selectedColor: AppTheme.primaryColor.withOpacity(0.15),
+              selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
               labelStyle: TextStyle(
                   color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   fontSize: 13),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               side: BorderSide(
-                  color: isSelected ? AppTheme.primaryColor : AppTheme.textDim.withOpacity(0.1)),
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textDim.withValues(alpha: 0.1)),
             ),
           );
         },
@@ -314,14 +305,18 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               selected: isSelected,
               onSelected: (_) => _onTypeChanged(type),
               backgroundColor: AppTheme.surfaceDark,
-              selectedColor: AppTheme.primaryColor.withOpacity(0.15),
+              selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
               labelStyle: TextStyle(
                   color: isSelected ? AppTheme.primaryColor : AppTheme.textDim,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   fontSize: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
               side: BorderSide(
-                  color: isSelected ? AppTheme.primaryColor : AppTheme.textDim.withOpacity(0.1), width: 1),
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textDim.withValues(alpha: 0.1),
+                  width: 1),
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
             ),
           );
@@ -336,9 +331,12 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       decoration: BoxDecoration(
         color: AppTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.textDim.withOpacity(0.1)),
+        border: Border.all(color: AppTheme.textDim.withValues(alpha: 0.1)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -409,16 +407,23 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                     decoration: BoxDecoration(
                       color: AppTheme.backgroundDark,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppTheme.textDim.withOpacity(0.1)),
+                      border: Border.all(
+                          color: AppTheme.textDim.withValues(alpha: 0.1)),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today_rounded, color: AppTheme.primaryColor.withOpacity(0.7), size: 16),
+                        Icon(Icons.calendar_today_rounded,
+                            color: AppTheme.primaryColor.withValues(alpha: 0.7),
+                            size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            DateFormat('dd MMM yyyy', 'tr_TR').format(_selectedDate),
-                            style: const TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.bold),
+                            DateFormat('dd MMM yyyy', 'tr_TR')
+                                .format(_selectedDate),
+                            style: const TextStyle(
+                                color: AppTheme.textLight,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -452,7 +457,9 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+      keyboardType: isNumber
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
       inputFormatters: isNumber
           ? [
               TextInputFormatter.withFunction((oldValue, newValue) {
@@ -461,7 +468,8 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                   return newValue.copyWith(
                     text: text,
                     // If selection end is out of bounds after a replacement, handle it, but here lengths are the same.
-                    selection: TextSelection.collapsed(offset: newValue.selection.end),
+                    selection:
+                        TextSelection.collapsed(offset: newValue.selection.end),
                   );
                 }
                 return oldValue;
@@ -469,18 +477,32 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
             ]
           : null,
       validator: validator,
-      style: const TextStyle(fontSize: 13, color: AppTheme.textLight, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+          fontSize: 13, color: AppTheme.textLight, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 12, color: AppTheme.textDim, fontWeight: FontWeight.normal),
-        prefixIcon: Icon(icon, size: 18, color: AppTheme.primaryColor.withOpacity(0.7)),
+        labelStyle: const TextStyle(
+            fontSize: 12,
+            color: AppTheme.textDim,
+            fontWeight: FontWeight.normal),
+        prefixIcon: Icon(icon,
+            size: 18, color: AppTheme.primaryColor.withValues(alpha: 0.7)),
         filled: true,
         fillColor: AppTheme.backgroundDark,
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTheme.textDim.withOpacity(0.1))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
-        errorStyle: const TextStyle(height: 0, fontSize: 0), // hide error text to save vertical space
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide:
+                BorderSide(color: AppTheme.textDim.withValues(alpha: 0.1))),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide:
+                const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+        errorStyle: const TextStyle(
+            height: 0, fontSize: 0), // hide error text to save vertical space
       ),
     );
   }

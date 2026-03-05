@@ -101,82 +101,84 @@ class IPOService {
   }
 
   // Alternative: IEX Cloud API
-  static const String _iexToken =
-      'pk_demo'; // Replace with your token from iexcloud.io
-  static const String _iexBaseUrl = 'https://cloud.iexapis.com/stable';
 
   /// Fetch IPO calendar directly from halkarz.com
   Future<List<IPO>> fetchIPOCalendar({bool forceRefresh = false}) async {
     if (!forceRefresh && _cachedIPOs != null && _lastFetchTime != null) {
-        return _cachedIPOs!;
+      return _cachedIPOs!;
     }
-    
+
     try {
-      final response = await http
-          .get(
-            Uri.parse('https://halkarz.com/'),
-            headers: {'User-Agent': 'Mozilla/5.0'}
-          )
-          .timeout(const Duration(seconds: 15));
+      final response = await http.get(Uri.parse('https://halkarz.com/'),
+          headers: {
+            'User-Agent': 'Mozilla/5.0'
+          }).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
         final articles = document.querySelectorAll('article.index-list');
-        
+
         List<IPO> scrapedIPOs = [];
-        
+
         for (var article in articles) {
           final nameElement = article.querySelector('h3.il-halka-arz-sirket a');
           final symbolElement = article.querySelector('span.il-bist-kod');
           final dateElement = article.querySelector('time');
           final urlElement = article.querySelector('a');
           final statusBadge = article.querySelector('i.snc-badge');
-          
+
           String company = nameElement?.text.trim() ?? '';
           String symbol = symbolElement?.text.trim() ?? '';
           String date = dateElement?.text.trim() ?? '';
           String detailUrl = urlElement?.attributes['href'] ?? '';
-          
+
           if (company.isEmpty) continue;
 
-          bool hasTamamlandi = statusBadge != null && 
-              (statusBadge.attributes['title']?.contains('Tamamlandı') ?? false);
-              
+          bool hasTamamlandi = statusBadge != null &&
+              (statusBadge.attributes['title']?.contains('Tamamlandı') ??
+                  false);
+
           bool isCompleted = hasTamamlandi;
-          
-          if (!isCompleted && date.isNotEmpty && !date.contains('Hazırlanıyor')) {
+
+          if (!isCompleted &&
+              date.isNotEmpty &&
+              !date.contains('Hazırlanıyor')) {
             // Check if date is in the past by looking at the year and extracting the month
-            if (date.contains('2025') || date.contains('2024') || date.contains('2023')) {
-               isCompleted = true;
+            if (date.contains('2025') ||
+                date.contains('2024') ||
+                date.contains('2023')) {
+              isCompleted = true;
             } else if (date.contains('2026')) {
-               if (date.contains('Ocak')) {
-                  isCompleted = true;
-               } else if (date.contains('Şubat')) {
-                  // E.g '19-20 Şubat 2026'. Use regex to find the last day number.
-                  final numRegex = RegExp(r'(\d+)');
-                  final matches = numRegex.allMatches(date);
-                  if (matches.isNotEmpty) {
-                    try {
-                      // get the largest number before we hit year 2026
-                      int day = -1;
-                      for (var m in matches) {
-                        int v = int.parse(m.group(1)!);
-                        if (v < 32 && v > day) day = v;
-                      }
-                      if (day != -1 && day < DateTime.now().day) {
-                         isCompleted = true; // day has passed
-                      }
-                    } catch (e) {}
+              if (date.contains('Ocak')) {
+                isCompleted = true;
+              } else if (date.contains('Şubat')) {
+                // E.g '19-20 Şubat 2026'. Use regex to find the last day number.
+                final numRegex = RegExp(r'(\d+)');
+                final matches = numRegex.allMatches(date);
+                if (matches.isNotEmpty) {
+                  try {
+                    // get the largest number before we hit year 2026
+                    int day = -1;
+                    for (var m in matches) {
+                      int v = int.parse(m.group(1)!);
+                      if (v < 32 && v > day) day = v;
+                    }
+                    if (day != -1 && day < DateTime.now().day) {
+                      isCompleted = true; // day has passed
+                    }
+                  } catch (e) {
+                    // ignore parse errors
                   }
-               }
+                }
+              }
             }
           }
-          
+
           String status = 'priced';
           if (isCompleted) {
-             status = 'priced'; 
+            status = 'priced';
           } else {
-             status = 'upcoming'; 
+            status = 'upcoming';
           }
 
           scrapedIPOs.add(IPO(
@@ -192,14 +194,10 @@ class IPOService {
         // Fetch details for the first 15 IPOs to get prices and shares efficiently
         final int limit = scrapedIPOs.length > 20 ? 20 : scrapedIPOs.length;
         final detailedIPOs = await Future.wait(
-          scrapedIPOs.take(limit).map((ipo) => _fetchIPODetails(ipo))
-        );
-        
+            scrapedIPOs.take(limit).map((ipo) => _fetchIPODetails(ipo)));
+
         // Combine detailed with the rest
-        scrapedIPOs = [
-          ...detailedIPOs,
-          ...scrapedIPOs.skip(limit)
-        ];
+        scrapedIPOs = [...detailedIPOs, ...scrapedIPOs.skip(limit)];
 
         if (scrapedIPOs.isNotEmpty) {
           _cachedIPOs = scrapedIPOs;
@@ -224,30 +222,30 @@ class IPOService {
   Future<IPO> _fetchIPODetails(IPO ipo) async {
     if (ipo.url == null || ipo.url!.isEmpty) return ipo;
     try {
-      final response = await http.get(
-        Uri.parse(ipo.url!),
-        headers: {'User-Agent': 'Mozilla/5.0'}
-      ).timeout(const Duration(seconds: 5));
-      
+      final response = await http.get(Uri.parse(ipo.url!), headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }).timeout(const Duration(seconds: 5));
+
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
         final rows = document.querySelectorAll('tr');
-        
+
         String? priceRange;
         int? numberOfShares;
-        
+
         for (var row in rows) {
           final text = row.text;
           if (text.contains('Fiyatı/Aralığı')) {
-             final valCell = row.querySelectorAll('td').last;
-             priceRange = valCell.text.trim();
+            final valCell = row.querySelectorAll('td').last;
+            priceRange = valCell.text.trim();
           } else if (text.contains('Pay')) {
-             final valCell = row.querySelectorAll('td').last;
-             String shareStr = valCell.text.replaceAll('Lot', '').replaceAll('.', '').trim();
-             numberOfShares = int.tryParse(shareStr);
+            final valCell = row.querySelectorAll('td').last;
+            String shareStr =
+                valCell.text.replaceAll('Lot', '').replaceAll('.', '').trim();
+            numberOfShares = int.tryParse(shareStr);
           }
         }
-        
+
         return IPO(
           symbol: ipo.symbol,
           company: ipo.company,
@@ -276,11 +274,6 @@ class IPOService {
     final allIPOs = await fetchIPOCalendar();
     // For manual scraped data, anything not 'upcoming' and string exists goes here
     return allIPOs.where((ipo) => ipo.status != 'upcoming').toList();
-  }
-
-  String _getDateString(int daysOffset) {
-    final date = DateTime.now().add(Duration(days: daysOffset));
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   /// Fallback data when API is unavailable (Turkish BIST focus)

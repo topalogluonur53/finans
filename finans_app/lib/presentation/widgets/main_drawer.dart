@@ -51,7 +51,7 @@ class MainDrawer extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               children: [
-                _SectionLabel(label: 'FİNANSAL'),
+                const _SectionLabel(label: 'FİNANSAL'),
                 _DrawerTile(
                   icon: Icons.account_balance_outlined,
                   color: _kBlueMid,
@@ -90,7 +90,7 @@ class MainDrawer extends StatelessWidget {
                 Divider(color: Colors.grey.shade200, height: 1),
                 const SizedBox(height: 8),
 
-                _SectionLabel(label: 'GENEL'),
+                const _SectionLabel(label: 'GENEL'),
                 _DrawerTile(
                   icon: Icons.settings_outlined,
                   color: _kSubText,
@@ -230,7 +230,7 @@ class _DrawerHeader extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white38, width: 2),
                 ),
@@ -334,7 +334,7 @@ class _DrawerTile extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 20),

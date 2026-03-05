@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
 import 'package:finans_app/core/utils/formatters.dart';
-import 'package:finans_app/data/models/asset.dart';
 import 'package:finans_app/data/providers/market_provider.dart';
 import 'package:finans_app/data/providers/portfolio_provider.dart';
-import 'package:finans_app/presentation/widgets/ticker_widget.dart';
 import 'package:finans_app/presentation/screens/portfolio/add_asset_screen.dart';
 import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
 import 'package:finans_app/data/providers/finance_provider.dart';
@@ -48,8 +46,6 @@ class DashboardView extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Column(
             children: [
-
-
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
@@ -59,9 +55,8 @@ class DashboardView extends StatelessWidget {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     children: [
-
                       // ─── Quick Actions (en üstte) ──────────────────────────
-                      _QuickActionsSection(),
+                      const _QuickActionsSection(),
                       const SizedBox(height: 16),
 
                       // ─── Hero Total Balance Card ───────────────────────────
@@ -114,7 +109,8 @@ class _TotalBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final plColor = isPLPositive ? AppTheme.secondaryColor : AppTheme.errorColor;
+    final plColor =
+        isPLPositive ? AppTheme.secondaryColor : AppTheme.errorColor;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -247,8 +243,8 @@ class _QuickActionsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 10),
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 10),
           child: Text(
             'Hızlı İşlemler',
             style: TextStyle(
@@ -366,65 +362,3 @@ class _ActionButtonState extends State<_ActionButton> {
     );
   }
 }
-
-// ─── Market Tile ───────────────────────────────────────────────────────────────
-
-class _MarketTile extends StatelessWidget {
-  final MarketData price;
-  final bool isPositive;
-
-  const _MarketTile({required this.price, required this.isPositive});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isPositive ? AppTheme.secondaryColor : AppTheme.errorColor;
-    return Container(
-      width: 130,
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            price.name,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 12),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const Spacer(),
-          Text(
-            Formatters.formatMoney(price.price),
-            style:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${isPositive ? '+' : ''}${price.changePercent.toStringAsFixed(2)}%',
-              style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-

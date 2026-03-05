@@ -57,16 +57,16 @@ class NumPad extends StatelessWidget {
     return InkWell(
       onTap: () => onNumberSelected(number),
       customBorder: const CircleBorder(),
-      splashColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+      splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
       child: Container(
         width: 72,
         height: 72,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -86,7 +86,7 @@ class NumPad extends StatelessWidget {
     return InkWell(
       onTap: onPressed,
       customBorder: const CircleBorder(),
-      splashColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+      splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
       child: Container(
         width: 72,
         height: 72,

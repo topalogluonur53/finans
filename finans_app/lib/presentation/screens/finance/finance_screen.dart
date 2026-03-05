@@ -6,7 +6,6 @@ import 'package:finans_app/data/providers/finance_provider.dart';
 import 'package:finans_app/presentation/screens/finance/recurring_screen.dart';
 import 'package:finans_app/presentation/widgets/main_drawer.dart';
 import 'package:finans_app/presentation/screens/finance/add_transaction_screen.dart';
-import 'package:finans_app/data/models/finance.dart';
 import 'package:intl/intl.dart';
 
 class FinanceScreen extends StatefulWidget {

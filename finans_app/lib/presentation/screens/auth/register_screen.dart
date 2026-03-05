@@ -202,7 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _kBlueDark.withOpacity(0.08),
+            color: _kBlueDark.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 6),
           ),
@@ -320,7 +320,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kBlueMid,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: _kBlueMid.withOpacity(0.5),
+                  disabledBackgroundColor: _kBlueMid.withValues(alpha: 0.5),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -425,12 +425,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: _kSubText.withOpacity(0.4),
+              color: _kSubText.withValues(alpha: 0.4),
               fontWeight: FontWeight.w400,
               letterSpacing: 0,
             ),
             counterText: '',
-            prefixIcon: Icon(icon, color: _kBlueMid.withOpacity(0.7), size: 22),
+            prefixIcon: Icon(icon, color: _kBlueMid.withValues(alpha: 0.7), size: 22),
             suffixIcon: isPassword
                 ? IconButton(
                     icon: Icon(
@@ -442,7 +442,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   )
                 : null,
             filled: true,
-            fillColor: _kBg.withOpacity(0.5),
+            fillColor: _kBg.withValues(alpha: 0.5),
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

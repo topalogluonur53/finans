@@ -1,0 +1,159 @@
+﻿Analyzing finans_app...                                         
+
+warning - The URI 'package:lints/recommended.yaml' included in 'C:\Kodlamalar\web1\finans\finans_app\extract_ipo\analysis_options.yaml' can't be found when analyzing 'C:\Kodlamalar\web1\finans\finans_app\extract_ipo' - extract_ipo\analysis_options.yaml:14:10 - include_file_not_found
+  error - Target of URI doesn't exist: 'package:http/http.dart' - extract_ipo\bin\extract_ipo.dart:1:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: 'package:html/parser.dart' - extract_ipo\bin\extract_ipo.dart:2:8 - uri_does_not_exist
+warning - Unused import: 'dart:convert' - extract_ipo\bin\extract_ipo.dart:3:8 - unused_import
+  error - Target of URI doesn't exist: 'package:html/dom.dart' - extract_ipo\bin\extract_ipo.dart:4:8 - uri_does_not_exist
+warning - The value of the local variable 'isNewBadge' isn't used - extract_ipo\bin\extract_ipo.dart:23:13 - unused_local_variable
+warning - The value of the local variable 'isWithdrawn' isn't used - extract_ipo\bin\extract_ipo.dart:34:12 - unused_local_variable
+  error - Target of URI doesn't exist: 'package:test/test.dart' - extract_ipo\test\extract_ipo_test.dart:2:8 - uri_does_not_exist
+  error - The function 'test' isn't defined - extract_ipo\test\extract_ipo_test.dart:5:3 - undefined_function
+  error - The function 'expect' isn't defined - extract_ipo\test\extract_ipo_test.dart:6:5 - undefined_function
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\theme\app_theme.dart:37:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\theme\app_theme.dart:82:45 - deprecated_member_use
+warning - The value of the field '_iexToken' isn't used - lib\data\services\ipo_service.dart:104:23 - unused_field
+warning - The value of the field '_iexBaseUrl' isn't used - lib\data\services\ipo_service.dart:106:23 - unused_field
+   info - Empty catch block - lib\data\services\ipo_service.dart:169:33 - empty_catches
+warning - The declaration '_getDateString' isn't referenced - lib\data\services\ipo_service.dart:281:10 - unused_element
+   info - Don't invoke 'print' in production code - lib\main.dart:92:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\main.dart:98:17 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:113:53 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\main.dart:159:15 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:372:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:505:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:756:65 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:772:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:773:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:778:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:782:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:783:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\lock_screen.dart:799:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:553:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:569:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:738:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:792:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:811:50 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\auth\login_screen.dart:828:7 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\auth\login_screen.dart:829:7 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\auth\login_screen.dart:830:7 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\auth\login_screen.dart:831:7 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\auth\login_screen.dart:832:7 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:840:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:899:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:946:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:965:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1058:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1133:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1136:77 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1305:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1334:23 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1348:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1356:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1497:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1499:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1537:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\login_screen.dart:1671:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\register_screen.dart:205:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\register_screen.dart:323:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\register_screen.dart:428:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\register_screen.dart:433:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\auth\register_screen.dart:445:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\debts_screen.dart:68:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\debts_screen.dart:108:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\debts_screen.dart:172:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\debts_screen.dart:172:88 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\receivables_screen.dart:68:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\receivables_screen.dart:108:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\receivables_screen.dart:172:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\debts\receivables_screen.dart:172:87 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\add_transaction_screen.dart:161:64 - deprecated_member_use
+warning - Unused import: 'package:finans_app/data/models/finance.dart' - lib\presentation\screens\finance\finance_screen.dart:9:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:117:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:192:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:204:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:245:39 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:252:22 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:257:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:325:27 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:326:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:336:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:372:42 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:386:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:391:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:401:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:429:28 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:522:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:525:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:527:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:529:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:532:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:534:7 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:569:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:613:51 - deprecated_member_use
+   info - The variable name '_Row' isn't a lowerCamelCase identifier - lib\presentation\screens\finance\recurring_screen.dart:656:10 - non_constant_identifier_names
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:827:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:829:60 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:866:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:867:28 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:884:47 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\finance\recurring_screen.dart:925:23 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:932:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:933:28 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:949:49 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:982:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\finance\recurring_screen.dart:983:28 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:1036:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:1037:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:1041:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:1042:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\finance\recurring_screen.dart:1262:37 - deprecated_member_use
+warning - Unused import: 'package:finans_app/data/models/asset.dart' - lib\presentation\screens\home\dashboard_view.dart:5:8 - unused_import
+warning - Unused import: 'package:finans_app/presentation/widgets/ticker_widget.dart' - lib\presentation\screens\home\dashboard_view.dart:8:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\home\dashboard_view.dart:64:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\home\dashboard_view.dart:250:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\home\dashboard_view.dart:252:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\home\dashboard_view.dart:254:20 - prefer_const_constructors
+warning - The declaration '_MarketTile' isn't referenced - lib\presentation\screens\home\dashboard_view.dart:372:7 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\presentation\screens\portfolio\add_asset_screen.dart:101:52 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\presentation\screens\portfolio\add_asset_screen.dart:103:52 - use_build_context_synchronously
+warning - The declaration '_customInputDecoration' isn't referenced - lib\presentation\screens\portfolio\add_asset_screen.dart:178:19 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:182:65 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:192:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:284:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:291:80 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:317:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:324:80 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:339:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:341:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:412:66 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:416:89 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:476:71 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\add_asset_screen.dart:481:131 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\portfolio_screen.dart:330:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\portfolio_screen.dart:333:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\portfolio_screen.dart:366:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\portfolio\portfolio_screen.dart:436:45 - deprecated_member_use
+   info - The 'child' argument should be last in widget constructor invocations - lib\presentation\screens\tools\currency_converter_screen.dart:218:13 - sort_child_properties_last
+   info - Invalid use of a private type in a public API - lib\presentation\screens\tools\loan_calculator_screen.dart:18:8 - library_private_types_in_public_api
+   info - Use 'const' with the constructor to improve performance - lib\presentation\screens\tools\loan_calculator_screen.dart:407:21 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\tools\tools_screen.dart:124:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\screens\tools\tools_screen.dart:138:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\binance_balance_card.dart:90:59 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\binance_balance_card.dart:99:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\binance_balance_card.dart:100:30 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\presentation\widgets\binance_balance_card.dart:101:35 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\binance_balance_card.dart:155:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\binance_balance_card.dart:156:26 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\presentation\widgets\binance_balance_card.dart:157:31 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\binance_balance_card.dart:160:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\binance_balance_card.dart:161:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\main_drawer.dart:54:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\presentation\widgets\main_drawer.dart:93:17 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\main_drawer.dart:233:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\main_drawer.dart:337:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\num_pad.dart:60:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\num_pad.dart:67:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\num_pad.dart:69:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\presentation\widgets\num_pad.dart:89:58 - deprecated_member_use
+

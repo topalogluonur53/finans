@@ -327,10 +327,10 @@ class _PortfolioSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceDark,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.textDim.withOpacity(0.1)),
+        border: Border.all(color: AppTheme.textDim.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -363,7 +363,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: plColor.withOpacity(0.15),
+                        color: plColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -433,7 +433,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
                   ),
                   Icon(
                     Icons.pie_chart_rounded,
-                    color: AppTheme.textDim.withOpacity(0.3),
+                    color: AppTheme.textDim.withValues(alpha: 0.3),
                     size: 24,
                   ),
                 ],

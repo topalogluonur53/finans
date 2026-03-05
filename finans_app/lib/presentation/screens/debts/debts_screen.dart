@@ -65,7 +65,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
           ? Center(
               child: Text(
                 'Kayıtlı borcunuz bulunmuyor.',
-                style: TextStyle(color: AppTheme.textDim.withOpacity(0.7)),
+                style: TextStyle(color: AppTheme.textDim.withValues(alpha: 0.7)),
               ),
             )
           : ListView.builder(
@@ -105,7 +105,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.15),
+                    color: Colors.red.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.call_made, color: Colors.red),
@@ -169,7 +169,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: daysLeft <= 3 ? Colors.red.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    color: daysLeft <= 3 ? Colors.red.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

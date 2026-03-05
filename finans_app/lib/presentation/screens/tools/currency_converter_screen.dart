@@ -215,6 +215,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             label: 'Hedef Para Birimi',
             currency: _toCurrency,
             currencies: _currencies,
+            onCurrencyChanged: (val) {
+              if (val != null) setState(() => _toCurrency = val);
+            },
+            readOnly: true,
             child: result != null
                 ? Text(
                     '${_currencies[_toCurrency]?['flag'] ?? ''} ${_formatResult(result, _toCurrency)}',
@@ -231,10 +235,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textDim),
                   ),
-            onCurrencyChanged: (val) {
-              if (val != null) setState(() => _toCurrency = val);
-            },
-            readOnly: true,
           ),
 
           // Rate info

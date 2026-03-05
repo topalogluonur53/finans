@@ -158,7 +158,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.surfaceDark,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.textDim.withOpacity(0.1)),
+                    border: Border.all(color: AppTheme.textDim.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     children: [

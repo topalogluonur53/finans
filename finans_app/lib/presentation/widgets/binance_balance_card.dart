@@ -87,7 +87,7 @@ class BinanceBalanceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceDark,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFCD535).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFFCD535).withValues(alpha: 0.3)),
       ),
       child: binance.isConnected
           ? Column(
@@ -96,12 +96,12 @@ class BinanceBalanceCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
+                    const Expanded(
                       child: Row(
                         children: [
-                          const Icon(Icons.account_balance_wallet, color: Color(0xFFFCD535), size: 24),
-                          const SizedBox(width: 8),
-                          const Expanded(
+                          Icon(Icons.account_balance_wallet, color: Color(0xFFFCD535), size: 24),
+                          SizedBox(width: 8),
+                          Expanded(
                             child: Text(
                               'Binance Cüzdanı',
                               style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold, fontSize: 15),
@@ -152,16 +152,16 @@ class BinanceBalanceCard extends StatelessWidget {
           : Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
+                const Expanded(
                   child: Row(
                     children: [
-                      const Icon(Icons.link, color: Color(0xFFFCD535), size: 32),
-                      const SizedBox(width: 12),
+                      Icon(Icons.link, color: Color(0xFFFCD535), size: 32),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Text(
                               'Binance Hesabını Bağla',
                               style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold),

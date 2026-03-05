@@ -550,7 +550,7 @@ class _LoginScreenState extends State<LoginScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _kBlueDark.withOpacity(0.08),
+            color: _kBlueDark.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 6),
           ),
@@ -566,7 +566,7 @@ class _LoginScreenState extends State<LoginScreen>
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: _kBlueMid.withOpacity(0.1),
+                    backgroundColor: _kBlueMid.withValues(alpha: 0.1),
                     child: const Icon(Icons.person, color: _kBlueMid),
                   ),
                   const SizedBox(width: 14),
@@ -735,7 +735,7 @@ class _LoginScreenState extends State<LoginScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _kBlueMid,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: _kBlueMid.withOpacity(0.5),
+                      disabledBackgroundColor: _kBlueMid.withValues(alpha: 0.5),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -789,7 +789,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: _kBlueMid,
-              side: BorderSide(color: _kBlueMid.withOpacity(0.6), width: 1.5),
+              side: BorderSide(color: _kBlueMid.withValues(alpha: 0.6), width: 1.5),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -808,7 +808,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: _kBlueDark,
-              side: BorderSide(color: _kBlueDark.withOpacity(0.4), width: 1.5),
+              side: BorderSide(color: _kBlueDark.withValues(alpha: 0.4), width: 1.5),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -825,11 +825,11 @@ class _LoginScreenState extends State<LoginScreen>
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildBottomTools() {
     final tools = [
-      _ToolItem(icon: Icons.calculate_outlined,    label: 'Kredi\nHesap.',    route: '/tools/loan'),
-      _ToolItem(icon: Icons.currency_exchange,      label: 'Döviz\nÇevirici',  route: '/tools/converter'),
-      _ToolItem(icon: Icons.trending_up_rounded,    label: 'Piyasa\nTakibi',   route: '/market'),
-      _ToolItem(icon: Icons.calendar_today_outlined,label: 'Halka\nArz',       route: '/tools/ipo'),
-      _ToolItem(icon: Icons.note_alt_outlined,      label: 'Notlar',           route: '/tools/notepad'),
+      const _ToolItem(icon: Icons.calculate_outlined,    label: 'Kredi\nHesap.',    route: '/tools/loan'),
+      const _ToolItem(icon: Icons.currency_exchange,      label: 'Döviz\nÇevirici',  route: '/tools/converter'),
+      const _ToolItem(icon: Icons.trending_up_rounded,    label: 'Piyasa\nTakibi',   route: '/market'),
+      const _ToolItem(icon: Icons.calendar_today_outlined,label: 'Halka\nArz',       route: '/tools/ipo'),
+      const _ToolItem(icon: Icons.note_alt_outlined,      label: 'Notlar',           route: '/tools/notepad'),
     ];
 
     return Container(
@@ -837,7 +837,7 @@ class _LoginScreenState extends State<LoginScreen>
         color: _kCard,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 12,
             offset: const Offset(0, -3),
           ),
@@ -896,7 +896,7 @@ class _LoginScreenState extends State<LoginScreen>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: _kBlueDark.withOpacity(0.06),
+              color: _kBlueDark.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(tool.icon, color: _kBlueDark, size: 22),
@@ -943,7 +943,7 @@ class _LoginScreenState extends State<LoginScreen>
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               boxShadow: [
                 BoxShadow(
-                  color: _kBlueDark.withOpacity(0.12),
+                  color: _kBlueDark.withValues(alpha: 0.12),
                   blurRadius: 24,
                   offset: const Offset(0, -4),
                 ),
@@ -962,7 +962,7 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Container(
                         width: 36, height: 4,
                         decoration: BoxDecoration(
-                          color: _kBlueMid.withOpacity(0.25),
+                          color: _kBlueMid.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1055,7 +1055,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: _usernameController.text.isEmpty ? 0 : 2,
                                         color: _usernameController.text.isEmpty
-                                            ? _kSubText.withOpacity(0.4)
+                                            ? _kSubText.withValues(alpha: 0.4)
                                             : valueColor,
                                       ),
                                       maxLines: 1,
@@ -1130,10 +1130,10 @@ class _LoginScreenState extends State<LoginScreen>
                                           shape: BoxShape.circle,
                                           color: filled
                                               ? _kBlueMid
-                                              : _kSubText.withOpacity(0.2),
+                                              : _kSubText.withValues(alpha: 0.2),
                                           border: filled
                                               ? null
-                                              : Border.all(color: _kSubText.withOpacity(0.3), width: 1.5),
+                                              : Border.all(color: _kSubText.withValues(alpha: 0.3), width: 1.5),
                                         ),
                                       );
                                     }),
@@ -1302,7 +1302,7 @@ class _NumKeyState extends State<_NumKey>
         width: 76, height: 76,
         child: Center(
           child: widget.icon != null
-              ? Icon(widget.icon, size: 28, color: _kSubText.withOpacity(0.4))
+              ? Icon(widget.icon, size: 28, color: _kSubText.withValues(alpha: 0.4))
               : null,
         ),
       );
@@ -1331,7 +1331,7 @@ class _NumKeyState extends State<_NumKey>
           )!;
           final subColor = Color.lerp(
             _kSubText,
-            _kBlueMid.withOpacity(0.7),
+            _kBlueMid.withValues(alpha: 0.7),
             t,
           )!;
 
@@ -1345,7 +1345,7 @@ class _NumKeyState extends State<_NumKey>
                 color: circleBg,
                 border: Border.all(
                   color: _pressed
-                      ? _kBlueMid.withOpacity(0.4)
+                      ? _kBlueMid.withValues(alpha: 0.4)
                       : const Color(0xFFDDE4EF),
                   width: 1.5,
                 ),
@@ -1353,7 +1353,7 @@ class _NumKeyState extends State<_NumKey>
                     ? []
                     : [
                         BoxShadow(
-                          color: _kBlueDark.withOpacity(0.08),
+                          color: _kBlueDark.withValues(alpha: 0.08),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -1494,9 +1494,9 @@ class _FieldTileState extends State<_FieldTile>
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
             color: widget.isActive
-                ? _kBlueMid.withOpacity(0.06)
+                ? _kBlueMid.withValues(alpha: 0.06)
                 : _pressed
-                    ? _kBlueMid.withOpacity(0.03)
+                    ? _kBlueMid.withValues(alpha: 0.03)
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
           ),
@@ -1534,7 +1534,7 @@ class _FieldTileState extends State<_FieldTile>
                               fontWeight: FontWeight.w700,
                               letterSpacing: widget.value.isEmpty ? 0 : 2,
                               color: widget.value.isEmpty
-                                  ? _kSubText.withOpacity(0.5)
+                                  ? _kSubText.withValues(alpha: 0.5)
                                   : _kText,
                             ),
                           ),
@@ -1668,7 +1668,7 @@ class _NativeInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isActive ? _kBlueMid.withOpacity(0.04) : Colors.transparent,
+        color: isActive ? _kBlueMid.withValues(alpha: 0.04) : Colors.transparent,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
