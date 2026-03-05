@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print, unused_local_variable, prefer_const_declarations
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 

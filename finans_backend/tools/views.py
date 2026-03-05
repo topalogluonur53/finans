@@ -54,8 +54,8 @@ class LoanCalculationViewSet(viewsets.ModelViewSet):
         result = self.calculate_loan_schedule(float(principal), float(rate), int(months))
         
         # Save instance with summary results (optional, if model supports)
-        serializer.validated_data['monthly_payment'] = decimal.Decimal(result['monthly_payment'])
-        serializer.validated_data['total_payment'] = decimal.Decimal(result['total_payment'])
+        serializer.validated_data['monthly_payment'] = decimal.Decimal(str(result['monthly_payment']))
+        serializer.validated_data['total_payment'] = decimal.Decimal(str(result['total_payment']))
         
         self.perform_create(serializer)
         

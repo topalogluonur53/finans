@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register(r'notes', NoteViewSet, basename='note')
 router.register(r'loan-calculator', LoanCalculationViewSet, basename='loan-calculation')
 
+urlpatterns = [
     path('proxy/', proxy_generic, name='proxy-generic'),
     path('', include(router.urls)),
 ]
