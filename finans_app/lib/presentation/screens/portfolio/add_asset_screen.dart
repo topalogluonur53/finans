@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/data/models/asset.dart';
 import 'package:finans_app/data/providers/portfolio_provider.dart';
+import 'package:finans_app/data/providers/market_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:finans_app/core/theme/app_theme.dart';
@@ -25,6 +26,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   final _quantityController = TextEditingController();
   final _priceController = TextEditingController();
   final _notesController = TextEditingController();
+  final _tagController = TextEditingController();
 
   // State
   AssetCategory? _selectedCategory;
@@ -43,6 +45,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       _priceController.text =
           asset.purchasePrice.toString().replaceAll('.', ',');
       _notesController.text = asset.notes ?? '';
+      _tagController.text = asset.tag ?? '';
       _selectedDate = asset.purchaseDate;
       try {
         _selectedType = AssetType.values.firstWhere((e) =>
@@ -60,6 +63,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     _quantityController.dispose();
     _priceController.dispose();
     _notesController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -99,6 +103,7 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               double.parse(_priceController.text.replaceAll(',', '.')),
           purchaseDate: _selectedDate,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
+          tag: _tagController.text.isEmpty ? null : _tagController.text,
         );
 
         final success = widget.assetToEdit == null
@@ -343,27 +348,30 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Row 1: Name and Symbol
-          Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: _buildCompactTextField(
-                  controller: _nameController,
-                  label: 'Varlık Adı',
-                  icon: Icons.drive_file_rename_outline,
+          if (_selectedType == AssetType.stock)
+            _buildStockSelector()
+          else
+            Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: _buildCompactTextField(
+                    controller: _nameController,
+                    label: 'Varlık Adı',
+                    icon: Icons.drive_file_rename_outline,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: _buildCompactTextField(
-                  controller: _symbolController,
-                  label: 'Sembol',
-                  icon: Icons.tag,
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: _buildCompactTextField(
+                    controller: _symbolController,
+                    label: 'Sembol',
+                    icon: Icons.tag,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: 12),
 
           // Row 2: Quantity and Price
@@ -443,6 +451,19 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          // Row 4: Tag
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactTextField(
+                  controller: _tagController,
+                  label: 'Etiket',
+                  icon: Icons.label_outline,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -506,4 +527,113 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
       ),
     );
   }
+
+  Widget _buildStockSelector() {
+    final marketPrices = Provider.of<MarketProvider>(context, listen: false).prices;
+    final stockPrices = marketPrices
+        .where((p) =>
+            p.category.toLowerCase() == 'stock' ||
+            p.category.toLowerCase() == 'index')
+        .toList();
+
+    return Autocomplete<MarketData>(
+      optionsBuilder: (TextEditingValue textEditingValue) {
+        if (textEditingValue.text.isEmpty) {
+          return stockPrices.take(15);
+        }
+        final q = textEditingValue.text.toLowerCase();
+        return stockPrices.where((option) {
+          return option.name.toLowerCase().contains(q) ||
+              option.symbol.toLowerCase().contains(q);
+        });
+      },
+      displayStringForOption: (MarketData option) => '${option.name} (${option.symbol})',
+      onSelected: (MarketData selection) {
+        setState(() {
+          _nameController.text = selection.name;
+          _symbolController.text = selection.symbol;
+        });
+      },
+      fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController,
+          FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
+        if (_symbolController.text.isNotEmpty && fieldTextEditingController.text.isEmpty) {
+          fieldTextEditingController.text = '${_nameController.text} (${_symbolController.text})';
+        }
+        return TextFormField(
+          controller: fieldTextEditingController,
+          focusNode: fieldFocusNode,
+          style: const TextStyle(fontSize: 13, color: AppTheme.textLight, fontWeight: FontWeight.bold),
+          validator: (val) {
+            if (_symbolController.text.isEmpty) return 'Lütfen listeden seçiniz';
+            return null;
+          },
+          onChanged: (val) {
+             _symbolController.clear();
+             _nameController.clear();
+          },
+          decoration: InputDecoration(
+            labelText: 'Hisse Senedi Seç (İsim veya Sembolü Ara)',
+            labelStyle: const TextStyle(fontSize: 12, color: AppTheme.textDim, fontWeight: FontWeight.normal),
+            prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.primaryColor.withOpacity(0.7)),
+            filled: true,
+            fillColor: AppTheme.backgroundDark,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTheme.textDim.withOpacity(0.1))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+            errorStyle: const TextStyle(height: 0, fontSize: 0),
+          ),
+        );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 8.0,
+            borderRadius: BorderRadius.circular(10),
+            color: AppTheme.surfaceDark,
+            child: Container(
+              height: 250,
+              width: MediaQuery.of(context).size.width - 60,
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                itemCount: options.length,
+                separatorBuilder: (context, index) => Divider(
+                  color: AppTheme.textDim.withOpacity(0.1),
+                  height: 1,
+                ),
+                itemBuilder: (BuildContext context, int index) {
+                  final option = options.elementAt(index);
+                  return ListTile(
+                    title: Text(
+                      option.name,
+                      style: const TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      option.symbol,
+                      style: const TextStyle(color: AppTheme.textDim, fontSize: 11),
+                    ),
+                    trailing: Text(
+                      option.price.toStringAsFixed(2),
+                      style: const TextStyle(color: AppTheme.primaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () {
+                      onSelected(option);
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
+

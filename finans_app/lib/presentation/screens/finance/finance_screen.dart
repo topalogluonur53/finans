@@ -95,43 +95,110 @@ class _FinanceScreenState extends State<FinanceScreen>
           ),
         ],
       ),
-      floatingActionButton: _tabController.index == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const AddTransactionScreen(
-                        type: TransactionType.income)),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            builder: (context) => Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceDark,
+                borderRadius: BorderRadius.circular(24),
               ),
-              label: const Text('Gelir Ekle', style: TextStyle(color: Colors.white)),
-              icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-              backgroundColor: Colors.green.shade500,
-            )
-          : _tabController.index == 1
-              ? FloatingActionButton.extended(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AddTransactionScreen(
-                            type: TransactionType.expense)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  label: const Text('Gider Ekle', style: TextStyle(color: Colors.white)),
-                  icon: const Icon(Icons.arrow_downward_rounded, color: Colors.white),
-                  backgroundColor: Colors.red.shade500,
-                )
-              : FloatingActionButton.extended(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const AddRecurringSheet(initialType: 'EXPENSE'),
-                    );
-                  },
-                  label: const Text('Sabit İşlem Ekle', style: TextStyle(color: Colors.white)),
-                  icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'İşlem Türü Seçin',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textLight,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.arrow_upward_rounded, color: Colors.green),
+                    ),
+                    title: const Text('Gelir Ekle', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddTransactionScreen(type: TransactionType.income),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.arrow_downward_rounded, color: Colors.red),
+                    ),
+                    title: const Text('Gider Ekle', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddTransactionScreen(type: TransactionType.expense),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.loop_outlined, color: AppTheme.primaryColor),
+                    ),
+                    title: const Text('Sabit İşlem Ekle', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const AddRecurringSheet(initialType: 'EXPENSE'),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          );
+        },
+        label: const Text('İşlem Ekle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppTheme.primaryColor,
+      ),
     );
   }
 

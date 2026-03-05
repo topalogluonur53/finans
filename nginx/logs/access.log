@@ -14874,5 +14874,3 @@ ozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTM
 127.0.0.1 - - [02/Mar/2026:22:45:35 +0300] "GET /wpad.dat HTTP/1.1" 200 1543 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0"
 127.0.0.1 - - [02/Mar/2026:22:45:35 +0300] "GET /wpad.dat HTTP/1.1" 200 1543 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0"
 127.0.0.1 - - [02/Mar/2026:22:45:35 +0300] "GET /wpad.dat HTTP/1.1" 200 1543 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0"
-127.0.0.1 - - [06/Mar/2026:00:20:09 +0300] "GET / HTTP/1.1" 404 188 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
-127.0.0.1 - - [06/Mar/2026:00:20:09 +0300] "GET /favicon.ico HTTP/1.1" 404 188 "http://localhost:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"

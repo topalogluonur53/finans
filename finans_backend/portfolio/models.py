@@ -31,6 +31,7 @@ class Asset(models.Model):
     purchase_price = models.DecimalField(max_digits=20, decimal_places=2) # Per unit price
     purchase_date = models.DateTimeField()
     notes = models.TextField(blank=True, null=True)
+    tag = models.CharField(max_length=50, blank=True, null=True) # Etiket
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

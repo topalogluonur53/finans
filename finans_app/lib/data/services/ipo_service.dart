@@ -70,34 +70,7 @@ class IPOService {
   }
 
   List<IPONews> _getFallbackNews() {
-    return [
-      IPONews(
-        title: 'Borsa İstanbul 2026 Halka Arz Beklentileri',
-        content:
-            '2026 yılında Borsa İstanbul\'da teknoloji ve enerji şirketlerinin ağırlıkta olduğu yeni bir halka arz dalgası bekleniyor. SPK onay sürecindeki şirket sayısı artıyor.',
-        date: DateTime.now().toIso8601String(),
-        url: 'https://borsaistanbul.com',
-        source: 'Finans Gündem',
-      ),
-      IPONews(
-        title: 'Yeni Halka Arz Onayları ve Talep Toplama',
-        content:
-            'Şubat ayında beş yeni şirketin halka arz başvurusu onaylandı. Empa Elektronik ve Ata Turizm bu haftanın en çok konuşulan arzları arasında.',
-        date:
-            DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
-        url: 'https://spk.gov.tr',
-        source: 'Para Analiz',
-      ),
-      IPONews(
-        title: 'BIST Halka Arz Endeksi (XHARZ) Rekor Kırıyor',
-        content:
-            'Yeni halka arz edilen şirketlerin yüksek performansı ile XHARZ endeksi 2026 yılının ilk çeyreğinde piyasa ortalamasının üzerinde getiri sağladı.',
-        date:
-            DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-        url: 'https://bigpara.hurriyet.com.tr',
-        source: 'BigPara',
-      ),
-    ];
+    return [];
   }
 
   // Alternative: IEX Cloud API
@@ -109,10 +82,12 @@ class IPOService {
     }
 
     try {
-      final response = await http.get(Uri.parse('https://halkarz.com/'),
-          headers: {
-            'User-Agent': 'Mozilla/5.0'
-          }).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            Uri.parse('https://halkarz.com/'),
+            headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
@@ -134,43 +109,45 @@ class IPOService {
 
           if (company.isEmpty) continue;
 
-          bool hasTamamlandi = statusBadge != null &&
-              (statusBadge.attributes['title']?.contains('Tamamlandı') ??
-                  false);
-
+          bool hasTamamlandi = statusBadge != null && 
+              ((statusBadge.attributes['title']?.contains('Tamamlandı') ?? false) ||
+               (statusBadge.attributes['title']?.contains('Sonuçları') ?? false) ||
+               (statusBadge.attributes['title']?.contains('İşlem') ?? false));
+              
           bool isCompleted = hasTamamlandi;
-
-          if (!isCompleted &&
-              date.isNotEmpty &&
-              !date.contains('Hazırlanıyor')) {
-            // Check if date is in the past by looking at the year and extracting the month
-            if (date.contains('2025') ||
-                date.contains('2024') ||
-                date.contains('2023')) {
-              isCompleted = true;
-            } else if (date.contains('2026')) {
-              if (date.contains('Ocak')) {
-                isCompleted = true;
-              } else if (date.contains('Şubat')) {
-                // E.g '19-20 Şubat 2026'. Use regex to find the last day number.
-                final numRegex = RegExp(r'(\d+)');
-                final matches = numRegex.allMatches(date);
-                if (matches.isNotEmpty) {
-                  try {
-                    // get the largest number before we hit year 2026
-                    int day = -1;
-                    for (var m in matches) {
-                      int v = int.parse(m.group(1)!);
-                      if (v < 32 && v > day) day = v;
+          
+          if (!isCompleted && date.isNotEmpty && !date.contains('Hazırlanıyor')) {
+            final lowerDate = date.toLowerCase();
+            final now = DateTime.now();
+            final currentYear = now.year;
+            
+            // Check past years
+            for (int y = 2020; y < currentYear; y++) {
+               if (date.contains(y.toString())) {
+                  isCompleted = true;
+                  break;
+               }
+            }
+            
+            // For current year
+            if (!isCompleted && date.contains(currentYear.toString())) {
+               final monthNames = ['ocak', 'şubat', 'mart', 'nisan', 'mayıs', 'haziran', 'temmuz', 'ağustos', 'eylül', 'ekim', 'kasım', 'aralık'];
+               final dateRegex = RegExp(r'(\d+)\s*(' + monthNames.join('|') + ')');
+               final matches = dateRegex.allMatches(lowerDate);
+               
+               if (matches.isNotEmpty) {
+                 final lastMatch = matches.last;
+                 int foundMonth = monthNames.indexOf(lastMatch.group(2)!) + 1;
+                 int lastDay = int.parse(lastMatch.group(1)!);
+                 
+                 if (foundMonth < now.month) {
+                    isCompleted = true;
+                 } else if (foundMonth == now.month) {
+                    if (lastDay < now.day) {
+                       isCompleted = true;
                     }
-                    if (day != -1 && day < DateTime.now().day) {
-                      isCompleted = true; // day has passed
-                    }
-                  } catch (e) {
-                    // ignore parse errors
-                  }
-                }
-              }
+                 }
+               }
             }
           }
 
@@ -222,10 +199,11 @@ class IPOService {
   Future<IPO> _fetchIPODetails(IPO ipo) async {
     if (ipo.url == null || ipo.url!.isEmpty) return ipo;
     try {
-      final response = await http.get(Uri.parse(ipo.url!), headers: {
-        'User-Agent': 'Mozilla/5.0'
-      }).timeout(const Duration(seconds: 5));
-
+      final response = await http.get(
+        Uri.parse(ipo.url!),
+        headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
+      ).timeout(const Duration(seconds: 5));
+      
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
         final rows = document.querySelectorAll('tr');
@@ -278,133 +256,6 @@ class IPOService {
 
   /// Fallback data when API is unavailable (Turkish BIST focus)
   List<IPO> _getFallbackIPOs() {
-    return [
-      IPO(
-        symbol: 'EMPAE',
-        company: 'Empa Elektronik San. ve Tic. A.Ş.',
-        exchange: 'BIST',
-        date: '2026-02-19',
-        priceRange: '24.50 TL',
-        numberOfShares: 25000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'ATATR',
-        company: 'Ata Turizm İşletmecilik A.Ş.',
-        exchange: 'BIST',
-        date: '2026-02-11',
-        price: 18.50,
-        numberOfShares: 30000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'BESTE',
-        company: 'Best Brands Grup Enerji Yatırım A.Ş.',
-        exchange: 'BIST',
-        date: '2026-02-05',
-        price: 14.70,
-        numberOfShares: 54578570,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'NETCD',
-        company: 'Netcad Yazılım A.Ş.',
-        exchange: 'BIST',
-        date: '2026-01-28',
-        price: 46.00,
-        numberOfShares: 40000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'AKHAN',
-        company: 'Akhan Un Fabrikası A.Ş.',
-        exchange: 'BIST',
-        date: '2026-01-28',
-        price: 21.50,
-        numberOfShares: 54700000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'MEYSU',
-        company: 'Meysu Gıda San. ve Tic. A.Ş.',
-        exchange: 'BIST',
-        date: '2026-01-05',
-        price: 7.50,
-        numberOfShares: 175000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'ZGYO',
-        company: 'Z Gayrimenkul Yatırım Ortaklığı A.Ş.',
-        exchange: 'BIST',
-        date: '2026-01-15',
-        price: 5.20,
-        numberOfShares: 100000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'UCAYM',
-        company: 'Üçay Mühendislik Enerji A.Ş.',
-        exchange: 'BIST',
-        date: '2026-01-14',
-        price: 22.00,
-        numberOfShares: 20000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'FRMPL',
-        company: 'Formül Plastik ve Metal Sanayi A.Ş.',
-        exchange: 'BIST',
-        date: '2026-01-07',
-        price: 12.50,
-        numberOfShares: 45000000,
-        status: 'priced',
-      ),
-      IPO(
-        symbol: 'ZERGY',
-        company: 'Zeray Gayrimenkul Yatırım Ortaklığı',
-        exchange: 'BIST',
-        date: '2026-03-15',
-        priceRange: '18.00 - 20.00 TL',
-        numberOfShares: 50000000,
-        status: 'upcoming',
-      ),
-      IPO(
-        symbol: 'VAKFA',
-        company: 'Vakıf Faktoring A.Ş.',
-        exchange: 'BIST',
-        date: '2026-03-25',
-        priceRange: '15.50 - 16.50 TL',
-        numberOfShares: 35000000,
-        status: 'upcoming',
-      ),
-      IPO(
-        symbol: 'PAHOL',
-        company: 'Pasifik Holding A.Ş.',
-        exchange: 'BIST',
-        date: '2026-04-10',
-        priceRange: 'Belirlenmedi',
-        numberOfShares: 80000000,
-        status: 'upcoming',
-      ),
-      IPO(
-        symbol: 'ECOGR',
-        company: 'Ecogreen Enerji Holding A.Ş.',
-        exchange: 'BIST',
-        date: '2026-04-20',
-        priceRange: '45.00 - 48.00 TL',
-        numberOfShares: 60000000,
-        status: 'upcoming',
-      ),
-      IPO(
-        symbol: 'FLO',
-        company: 'Flo Mağazacılık A.Ş.',
-        exchange: 'BIST',
-        date: '2026-05-15',
-        priceRange: 'Belirlenmedi',
-        numberOfShares: 120000000,
-        status: 'upcoming',
-      ),
-    ];
+    return [];
   }
 }

@@ -7,6 +7,7 @@ class Asset {
   final double purchasePrice;
   final DateTime purchaseDate;
   final String? notes;
+  final String? tag;
 
   Asset({
     this.id,
@@ -17,6 +18,7 @@ class Asset {
     required this.purchasePrice,
     required this.purchaseDate,
     this.notes,
+    this.tag,
   });
 
   factory Asset.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class Asset {
       purchasePrice: double.parse(json['purchase_price'].toString()),
       purchaseDate: DateTime.parse(json['purchase_date']),
       notes: json['notes'],
+      tag: json['tag'],
     );
   }
 
@@ -41,6 +44,7 @@ class Asset {
       'purchase_price': purchasePrice,
       'purchase_date': purchaseDate.toIso8601String(),
       'notes': notes,
+      'tag': tag,
     };
   }
 }

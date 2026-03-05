@@ -158,7 +158,15 @@ def _extract_price_row(df: pd.DataFrame, symbol: str):
         return None
     try:
         if isinstance(df.columns, pd.MultiIndex):
-            sym_df = df[symbol].dropna(subset=['Close'])
+            if symbol in df.columns.levels[0]:
+                # Old/group_by='ticker' format: Level 0 = Ticker, Level 1 = Price
+                sym_df = df[symbol].dropna(subset=['Close'])
+            else:
+                # New yfinance format: Level 0 = Price, Level 1 = Ticker
+                try:
+                    sym_df = df.xs(symbol, axis=1, level=1).dropna(subset=['Close'])
+                except KeyError:
+                    return None
         else:
             sym_df = df.dropna(subset=['Close'])
 

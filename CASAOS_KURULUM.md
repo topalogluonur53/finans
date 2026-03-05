@@ -15,7 +15,7 @@ Bu yöntemle CasaOS arayüzündeki **İçe Aktar (Import)** özelliğini kullana
 3. Sağ üst köşede bulunan **Custom Install (Özel Kurulum)** veya **Import (İçe Aktar)** seçeneğine tıklayın.
 4. Açılan penceredeki Import alanına tıklayıp şu GitHub Raw linkini yapıştırın:
    ```
-   https://raw.githubusercontent.com/topalogluonur53/finans-app/main/casaos-compose.yml
+   https://raw.githubusercontent.com/topalogluonur53/finans/main/casaos-compose.yml
    ```
    *(Not: Bu linkin düzgün çalışması için `casaos-compose.yml` dosyanızı commit edip main branch'e pushlamış olmanız gerekir).*
 5. Linki yapıştırıp **Submit (Gönder)** butonuna tıkladığınızda CasaOS formu projenizin ayarlarına göre dolduracaktır. (İsim, portlar vb.)
@@ -33,7 +33,7 @@ Bunun için:
 2. Sağdaki pencerede bulunan **Add Source (Kaynak Ekle)** veya **+** ikonuna tıklayın.
 3. Çıkan kutucuğa GitHub deponuzun linkini ekleyin:
    ```
-   https://github.com/topalogluonur53/finans-app
+   https://github.com/topalogluonur53/finans
    ```
    *(DİKKAT: Bu özelliğin tam olarak çalışabilmesi için deponuzun ayarlarında bazı CasaOS AppStore kurallarına uygun klasör yapısı veya manifest dosyaları gerekebilir. Genellikle 1. yöntemi kullanmak tek bir projeyi yayınlamak için daha pratiktir).*
 
@@ -46,7 +46,7 @@ Eski yapılandırmanızda Django SQLite veritabanı dosya olarak (`./finans_back
 `.github/workflows/casaos-deployment.yml` dosyanızda şu an `DOCKER_USERNAME` ve `DOCKER_PASSWORD` GitHub Secrets üzerinden çalışacak şekilde ayarlanmış. 
 
 Eğer Github'a henüz ayarları girmediyseniz:
-1. GitHub deponuza (`finans-app`) gidin.
+1. GitHub deponuza (`finans`) gidin.
 2. **Settings (Ayarlar)** -> **Secrets and variables** -> **Actions** yolunu izleyin.
 3. **New repository secret** butonuna basarak aşağıdaki iki değişkeni ekleyin:
    - `DOCKER_USERNAME`: Docker Hub kullanıcı adınız

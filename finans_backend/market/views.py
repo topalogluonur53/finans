@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import MarketData, Alarm
 from .serializers import MarketDataSerializer, AlarmSerializer
+from .tasks import update_market_data
 from django.contrib import messages
 from decimal import Decimal
 
@@ -42,6 +43,18 @@ class MarketDataViewSet(viewsets.ReadOnlyModelViewSet):
     def ticker(self, request):
         data = MarketData.objects.all().values('symbol', 'price', 'change_percent_24h', 'market_type')
         return Response(list(data))
+
+    @action(detail=False, methods=['get', 'post'])
+    def update_now(self, request):
+        try:
+            if request.method == 'POST':
+                update_market_data.delay()
+                return Response({'status': 'queued', 'message': 'Piyasa verilerini güncelleme görevi sıraya alındı.'})
+            else:
+                update_market_data()
+                return Response({'status': 'success', 'message': 'Piyasa verileri anlık olarak güncellendi.'})
+        except Exception as e:
+            return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class AlarmViewSet(viewsets.ModelViewSet):
