@@ -1,9 +1,22 @@
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from .models import Note, LoanCalculation
 from .serializers import NoteSerializer, LoanCalculationSerializer
 import decimal
+import requests
+
+@api_view(['GET'])
+@permission_classes([])
+def proxy_generic(request):
+    url = request.GET.get('url')
+    if not url:
+        return Response({'detail': 'Missing url parameter'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+        return Response(resp.text, content_type='text/html')
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer

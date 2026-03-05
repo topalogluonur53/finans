@@ -1,0 +1,30 @@
+<article class="index-list"><div class="il-badge">
+<i class="fa-solid fa-check snc-badge" title="Tamamlandı"></i><div class="il-new">
+Yeni!</div></div>
+<a href="https://halkarz.com/metropal-kurumsal-hizmetler-a-s/" title="(MetropolCard) Metropal Kurumsal Hizmetler A.Ş."><img src="https://halkarz.com/wp-content/uploads/2024/10/METROPOLCARD-.jpg" class="slogo"></a><div class="il-content">
+<span class="il-bist-kod">
+MCARD                                </span><h3 class="il-halka-arz-sirket"><a href="https://halkarz.com/metropal-kurumsal-hizmetler-a-s/" title="(MetropolCard) Metropal Kurumsal Hizmetler A.Ş.">(MetropolCard) Metropal Kurumsal Hizmetler A.Ş.</a></h3>
+<span class="il-halka-arz-tarihi">
+<time datetime="2-3-4 Mart 2026" title="2-3-4 Mart 2026" pubdate="pubdate">2-3-4 Mart 2026</time>
+</span></div></article>
+===
+<article class="index-list"><div class="il-badge">
+<i class="fa-solid fa-check-double snc-badge" title="Halka Arz Sonuçları Açıklandı"></i><div class="il-new">
+Yeni!</div></div>
+<a href="https://halkarz.com/luxera-gayrimenkul-yatirim-ortakligi-a-s/" title="Luxera Gayrimenkul Yatırım Ortaklığı A.Ş."><img src="https://halkarz.com/wp-content/uploads/2026/02/LXGYO.jpg" class="slogo"></a><div class="il-content">
+<span class="il-bist-kod">
+LXGYO                                </span><h3 class="il-halka-arz-sirket"><a href="https://halkarz.com/luxera-gayrimenkul-yatirim-ortakligi-a-s/" title="Luxera Gayrimenkul Yatırım Ortaklığı A.Ş.">Luxera Gayrimenkul Yatırım Ortaklığı A.Ş.</a></h3>
+<span class="il-halka-arz-tarihi">
+<time datetime="2-3-4 Mart 2026" title="2-3-4 Mart 2026" pubdate="pubdate">2-3-4 Mart 2026</time>
+</span></div></article>
+===
+<article class="index-list"><div class="il-badge"><div class="il-gonk"><div class="ilg">
+<span class="bell far fa-bell"></span></div>
+Gong!</div></div>
+<a href="https://halkarz.com/gentas-kimya-san-ve-tic-pazarlama-a-s/" title="Gentaş Kimya San. ve Tic. Pazarlama A.Ş."><img src="https://halkarz.com/wp-content/uploads/2024/06/GENTASKIMYA.jpg" class="slogo"></a><div class="il-content">
+<span class="il-bist-kod">
+GENKM                                </span><h3 class="il-halka-arz-sirket"><a href="https://halkarz.com/gentas-kimya-san-ve-tic-pazarlama-a-s/" title="Gentaş Kimya San. ve Tic. Pazarlama A.Ş.">Gentaş Kimya San. ve Tic. Pazarlama A.Ş.</a></h3>
+<span class="il-halka-arz-tarihi">
+<time datetime="2-3 Mart 2026" title="2-3 Mart 2026" pubdate="pubdate">2-3 Mart 2026</time>
+</span></div></article>
+===

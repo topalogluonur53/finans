@@ -7,6 +7,9 @@ class Note(models.Model):
     title = models.CharField(max_length=200, blank=True)
     content = models.TextField()
     is_general = models.BooleanField(default=False)
+    color = models.BigIntegerField(default=4294967295)
+    is_pinned = models.BooleanField(default=False)
+    tags = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

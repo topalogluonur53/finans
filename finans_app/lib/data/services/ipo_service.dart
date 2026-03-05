@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:finans_app/data/models/ipo.dart';
 import 'package:finans_app/data/models/ipo_news.dart';
+import 'package:finans_app/core/constants/api_constants.dart';
 
 import 'package:html/parser.dart' as parser;
 
@@ -82,11 +83,11 @@ class IPOService {
     }
 
     try {
-      final response =
-          await http.get(Uri.parse('https://halkarz.com/'), headers: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-      }).timeout(const Duration(seconds: 15));
+      final proxyUrl =
+          '${ApiConstants.baseUrl}/tools/proxy/?url=https://halkarz.com/';
+      final response = await http
+          .get(Uri.parse(proxyUrl))
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
@@ -216,10 +217,10 @@ class IPOService {
   Future<IPO> _fetchIPODetails(IPO ipo) async {
     if (ipo.url == null || ipo.url!.isEmpty) return ipo;
     try {
-      final response = await http.get(Uri.parse(ipo.url!), headers: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-      }).timeout(const Duration(seconds: 5));
+      final proxyUrl = '${ApiConstants.baseUrl}/tools/proxy/?url=${ipo.url!}';
+      final response = await http
+          .get(Uri.parse(proxyUrl))
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);

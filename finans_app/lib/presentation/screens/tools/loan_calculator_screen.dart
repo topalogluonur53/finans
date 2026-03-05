@@ -97,14 +97,19 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen>
     }
 
     final monthlyRate = rate / 100;
-    final powFactor = pow(1 + monthlyRate, months).toDouble();
-    final monthly = principal * monthlyRate * powFactor / (powFactor - 1);
+
+    // Bankaların uyguladığı efektif faiz (KKDF %15 + BSMV %5 = %20 ek maliyet)
+    final effectiveMonthlyRate = monthlyRate * 1.20;
+
+    final powFactor = pow(1 + effectiveMonthlyRate, months).toDouble();
+    final monthly =
+        principal * effectiveMonthlyRate * powFactor / (powFactor - 1);
 
     List<AmortizationRow> schedule = [];
     double remainingBalance = principal;
 
     for (int i = 1; i <= months; i++) {
-      final interestPayment = remainingBalance * monthlyRate;
+      final interestPayment = remainingBalance * effectiveMonthlyRate;
       final principalPayment = monthly - interestPayment;
       remainingBalance -= principalPayment;
       if (remainingBalance < 0) remainingBalance = 0;
