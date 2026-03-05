@@ -1,0 +1,9 @@
+﻿Analyzing finans_app...                                         
+
+   info - Don't invoke 'print' in production code - test_scrape.dart:6:5 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:9:5 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:13:7 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:17:9 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:20:7 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:23:5 - avoid_print
+

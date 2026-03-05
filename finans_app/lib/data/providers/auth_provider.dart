@@ -17,9 +17,6 @@ class LoginException implements Exception {
   String toString() => message;
 }
 
-/// İnaktivite süresi: 1 dakika
-const Duration _kInactivityTimeout = Duration(minutes: 1);
-
 class AuthProvider extends ChangeNotifier {
   User? _user;
   String? _token;
@@ -48,10 +45,6 @@ class AuthProvider extends ChangeNotifier {
     // istendiği için zaman aşımı kilidi pasifleştirildi.
   }
 
-  void _lockDueToInactivity() {
-    // Kullanılmıyor
-  }
-
   /// Uygulama arka plana geçince veya çıkış yapılınca kilitle.
   void lockScreen() {
     if (isAuthenticated && !_isLocked) {
@@ -66,12 +59,15 @@ class AuthProvider extends ChangeNotifier {
     if (_user == null) return false;
     final savedUsername = _user!.username;
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': savedUsername, 'password': password}),
-      ).timeout(const Duration(seconds: 10));
+      final url =
+          Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': savedUsername, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _token = data['access'];
@@ -101,16 +97,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
+      final url =
+          Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
       debugPrint('Login URL: $url');
 
       late http.Response response;
       try {
-        response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'username': username, 'password': password}),
-        ).timeout(const Duration(seconds: 15));
+        response = await http
+            .post(
+              url,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({'username': username, 'password': password}),
+            )
+            .timeout(const Duration(seconds: 15));
       } catch (netErr) {
         // Web: XMLHttpRequest error | Mobil: SocketException | Her platform: TimeoutException
         final errStr = netErr.toString().toLowerCase();
@@ -142,10 +141,17 @@ class AuthProvider extends ChangeNotifier {
           'Kullanıcı adı veya şifre hatalı.\nLütfen tekrar deneyin.',
           LoginErrorType.wrongCredentials,
         );
-      } else if (response.statusCode == 502 || response.statusCode == 503 || response.statusCode == 504) {
+      } else if (response.statusCode == 502 ||
+          response.statusCode == 503 ||
+          response.statusCode == 504) {
         if (username.toLowerCase() == 'demo' && password == '123456') {
           _token = 'offline_demo_token';
-          _user = User(id: 0, username: 'demo', email: 'demo@finans.app', firstName: 'Önizleme', lastName: 'Modu');
+          _user = User(
+              id: 0,
+              username: 'demo',
+              email: 'demo@finans.app',
+              firstName: 'Önizleme',
+              lastName: 'Modu');
         } else {
           throw const LoginException(
             'Sunucu şu an erişilemiyor.\nLütfen daha sonra tekrar deneyin.',
@@ -155,7 +161,12 @@ class AuthProvider extends ChangeNotifier {
       } else {
         if (username.toLowerCase() == 'demo' && password == '123456') {
           _token = 'offline_demo_token';
-          _user = User(id: 0, username: 'demo', email: 'demo@finans.app', firstName: 'Önizleme', lastName: 'Modu');
+          _user = User(
+              id: 0,
+              username: 'demo',
+              email: 'demo@finans.app',
+              firstName: 'Önizleme',
+              lastName: 'Modu');
         } else {
           throw LoginException(
             'Giriş başarısız (HTTP ${response.statusCode}).\nLütfen daha sonra tekrar deneyin.',
@@ -169,7 +180,12 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('Unexpected login error: $e');
       if (username.toLowerCase() == 'demo' && password == '123456') {
         _token = 'offline_demo_token';
-        _user = User(id: 0, username: 'demo', email: 'demo@finans.app', firstName: 'Önizleme', lastName: 'Modu');
+        _user = User(
+            id: 0,
+            username: 'demo',
+            email: 'demo@finans.app',
+            firstName: 'Önizleme',
+            lastName: 'Modu');
       } else {
         throw LoginException(
           'Bir hata oluştu:\n${e.toString()}',
@@ -182,7 +198,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> register(String username, String email, String password, {String firstName = '', String lastName = ''}) async {
+  Future<void> register(String username, String email, String password,
+      {String firstName = '', String lastName = ''}) async {
     _isLoading = true;
     notifyListeners();
 

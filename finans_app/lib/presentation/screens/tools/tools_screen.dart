@@ -121,7 +121,7 @@ class _ToolCardState extends State<_ToolCard> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).primaryColor.withOpacity(0.08),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -136,7 +136,7 @@ class _ToolCardState extends State<_ToolCard> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(widget.icon, size: 28, color: primaryColor),
@@ -148,7 +148,8 @@ class _ToolCardState extends State<_ToolCard> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color ?? const Color(0xFF1A1A2E),
+                  color: Theme.of(context).textTheme.bodyLarge?.color ??
+                      const Color(0xFF1A1A2E),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

@@ -1,0 +1,10 @@
+﻿Analyzing finans_app...                                         
+
+   info - Statements in an if should be enclosed in a block - lib\presentation\screens\portfolio\add_asset_screen.dart:577:15 - curly_braces_in_flow_control_structures
+   info - Don't invoke 'print' in production code - test_scrape.dart:6:5 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:9:5 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:13:7 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:17:9 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:20:7 - avoid_print
+   info - Don't invoke 'print' in production code - test_scrape.dart:23:5 - avoid_print
+

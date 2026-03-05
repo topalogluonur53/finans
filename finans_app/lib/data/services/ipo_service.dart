@@ -82,12 +82,11 @@ class IPOService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('https://halkarz.com/'),
-            headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
-          )
-          .timeout(const Duration(seconds: 15));
+      final response =
+          await http.get(Uri.parse('https://halkarz.com/'), headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      }).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
@@ -109,45 +108,63 @@ class IPOService {
 
           if (company.isEmpty) continue;
 
-          bool hasTamamlandi = statusBadge != null && 
-              ((statusBadge.attributes['title']?.contains('Tamamlandı') ?? false) ||
-               (statusBadge.attributes['title']?.contains('Sonuçları') ?? false) ||
-               (statusBadge.attributes['title']?.contains('İşlem') ?? false));
-              
+          bool hasTamamlandi = statusBadge != null &&
+              ((statusBadge.attributes['title']?.contains('Tamamlandı') ??
+                      false) ||
+                  (statusBadge.attributes['title']?.contains('Sonuçları') ??
+                      false) ||
+                  (statusBadge.attributes['title']?.contains('İşlem') ??
+                      false));
+
           bool isCompleted = hasTamamlandi;
-          
-          if (!isCompleted && date.isNotEmpty && !date.contains('Hazırlanıyor')) {
+
+          if (!isCompleted &&
+              date.isNotEmpty &&
+              !date.contains('Hazırlanıyor')) {
             final lowerDate = date.toLowerCase();
             final now = DateTime.now();
             final currentYear = now.year;
-            
+
             // Check past years
             for (int y = 2020; y < currentYear; y++) {
-               if (date.contains(y.toString())) {
-                  isCompleted = true;
-                  break;
-               }
+              if (date.contains(y.toString())) {
+                isCompleted = true;
+                break;
+              }
             }
-            
+
             // For current year
             if (!isCompleted && date.contains(currentYear.toString())) {
-               final monthNames = ['ocak', 'şubat', 'mart', 'nisan', 'mayıs', 'haziran', 'temmuz', 'ağustos', 'eylül', 'ekim', 'kasım', 'aralık'];
-               final dateRegex = RegExp(r'(\d+)\s*(' + monthNames.join('|') + ')');
-               final matches = dateRegex.allMatches(lowerDate);
-               
-               if (matches.isNotEmpty) {
-                 final lastMatch = matches.last;
-                 int foundMonth = monthNames.indexOf(lastMatch.group(2)!) + 1;
-                 int lastDay = int.parse(lastMatch.group(1)!);
-                 
-                 if (foundMonth < now.month) {
+              final monthNames = [
+                'ocak',
+                'şubat',
+                'mart',
+                'nisan',
+                'mayıs',
+                'haziran',
+                'temmuz',
+                'ağustos',
+                'eylül',
+                'ekim',
+                'kasım',
+                'aralık'
+              ];
+              final dateRegex = RegExp('(\\d+)\\s*(${monthNames.join('|')})');
+              final matches = dateRegex.allMatches(lowerDate);
+
+              if (matches.isNotEmpty) {
+                final lastMatch = matches.last;
+                int foundMonth = monthNames.indexOf(lastMatch.group(2)!) + 1;
+                int lastDay = int.parse(lastMatch.group(1)!);
+
+                if (foundMonth < now.month) {
+                  isCompleted = true;
+                } else if (foundMonth == now.month) {
+                  if (lastDay < now.day) {
                     isCompleted = true;
-                 } else if (foundMonth == now.month) {
-                    if (lastDay < now.day) {
-                       isCompleted = true;
-                    }
-                 }
-               }
+                  }
+                }
+              }
             }
           }
 
@@ -199,11 +216,11 @@ class IPOService {
   Future<IPO> _fetchIPODetails(IPO ipo) async {
     if (ipo.url == null || ipo.url!.isEmpty) return ipo;
     try {
-      final response = await http.get(
-        Uri.parse(ipo.url!),
-        headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
-      ).timeout(const Duration(seconds: 5));
-      
+      final response = await http.get(Uri.parse(ipo.url!), headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      }).timeout(const Duration(seconds: 5));
+
       if (response.statusCode == 200) {
         var document = parser.parse(response.body);
         final rows = document.querySelectorAll('tr');

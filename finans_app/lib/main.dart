@@ -23,7 +23,6 @@ import 'presentation/screens/tools/ipo_screen.dart';
 import 'presentation/screens/tools/notepad/notepad_screen.dart';
 import 'presentation/screens/market/market_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
-import 'presentation/widgets/inactivity_detector.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

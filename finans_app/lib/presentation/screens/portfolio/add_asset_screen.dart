@@ -529,7 +529,8 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
   }
 
   Widget _buildStockSelector() {
-    final marketPrices = Provider.of<MarketProvider>(context, listen: false).prices;
+    final marketPrices =
+        Provider.of<MarketProvider>(context, listen: false).prices;
     final stockPrices = marketPrices
         .where((p) =>
             p.category.toLowerCase() == 'stock' ||
@@ -547,40 +548,63 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               option.symbol.toLowerCase().contains(q);
         });
       },
-      displayStringForOption: (MarketData option) => '${option.name} (${option.symbol})',
+      displayStringForOption: (MarketData option) =>
+          '${option.name} (${option.symbol})',
       onSelected: (MarketData selection) {
         setState(() {
           _nameController.text = selection.name;
           _symbolController.text = selection.symbol;
         });
       },
-      fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController,
-          FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
-        if (_symbolController.text.isNotEmpty && fieldTextEditingController.text.isEmpty) {
-          fieldTextEditingController.text = '${_nameController.text} (${_symbolController.text})';
+      fieldViewBuilder: (BuildContext context,
+          TextEditingController fieldTextEditingController,
+          FocusNode fieldFocusNode,
+          VoidCallback onFieldSubmitted) {
+        if (_symbolController.text.isNotEmpty &&
+            fieldTextEditingController.text.isEmpty) {
+          fieldTextEditingController.text =
+              '${_nameController.text} (${_symbolController.text})';
         }
         return TextFormField(
           controller: fieldTextEditingController,
           focusNode: fieldFocusNode,
-          style: const TextStyle(fontSize: 13, color: AppTheme.textLight, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              fontSize: 13,
+              color: AppTheme.textLight,
+              fontWeight: FontWeight.bold),
           validator: (val) {
-            if (_symbolController.text.isEmpty) return 'Lütfen listeden seçiniz';
+            if (_symbolController.text.isEmpty) {
+              return 'Lütfen listeden seçiniz';
+            }
             return null;
           },
           onChanged: (val) {
-             _symbolController.clear();
-             _nameController.clear();
+            _symbolController.clear();
+            _nameController.clear();
           },
           decoration: InputDecoration(
             labelText: 'Hisse Senedi Seç (İsim veya Sembolü Ara)',
-            labelStyle: const TextStyle(fontSize: 12, color: AppTheme.textDim, fontWeight: FontWeight.normal),
-            prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.primaryColor.withOpacity(0.7)),
+            labelStyle: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textDim,
+                fontWeight: FontWeight.normal),
+            prefixIcon: Icon(Icons.search,
+                size: 18, color: AppTheme.primaryColor.withValues(alpha: 0.7)),
             filled: true,
             fillColor: AppTheme.backgroundDark,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTheme.textDim.withOpacity(0.1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:
+                    BorderSide(color: AppTheme.textDim.withValues(alpha: 0.1))),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:
+                    const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
             errorStyle: const TextStyle(height: 0, fontSize: 0),
           ),
         );
@@ -596,14 +620,15 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
               height: 250,
               width: MediaQuery.of(context).size.width - 60,
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                border: Border.all(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: ListView.separated(
                 padding: EdgeInsets.zero,
                 itemCount: options.length,
                 separatorBuilder: (context, index) => Divider(
-                  color: AppTheme.textDim.withOpacity(0.1),
+                  color: AppTheme.textDim.withValues(alpha: 0.1),
                   height: 1,
                 ),
                 itemBuilder: (BuildContext context, int index) {
@@ -611,17 +636,24 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
                   return ListTile(
                     title: Text(
                       option.name,
-                      style: const TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          color: AppTheme.textLight,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
                       option.symbol,
-                      style: const TextStyle(color: AppTheme.textDim, fontSize: 11),
+                      style: const TextStyle(
+                          color: AppTheme.textDim, fontSize: 11),
                     ),
                     trailing: Text(
                       option.price.toStringAsFixed(2),
-                      style: const TextStyle(color: AppTheme.primaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold),
                     ),
                     onTap: () {
                       onSelected(option);
@@ -636,4 +668,3 @@ class _AddAssetScreenState extends State<AddAssetScreen> {
     );
   }
 }
-

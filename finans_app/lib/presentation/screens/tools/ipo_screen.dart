@@ -110,12 +110,12 @@ class _IPOScreenState extends State<IPOScreen>
               icon: const Icon(Icons.history),
               text: 'Son Arzlar (${_recentIPOs.length})',
             ),
-            Tab(
-              icon: const Icon(Icons.account_balance_wallet),
+            const Tab(
+              icon: Icon(Icons.account_balance_wallet),
               text: 'Portföyüm',
             ),
-            Tab(
-              icon: const Icon(Icons.newspaper),
+            const Tab(
+              icon: Icon(Icons.newspaper),
               text: 'Haberler',
             ),
           ],
