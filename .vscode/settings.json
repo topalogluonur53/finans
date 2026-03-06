@@ -1,0 +1,6 @@
+{
+    "python.defaultInterpreterPath": "c:\\Kodlamalar\\web1\\finans\\finans_backend\\venv\\Scripts\\python.exe",
+    "python.analysis.extraPaths": [
+        "c:\\Kodlamalar\\web1\\finans\\finans_backend"
+    ]
+}
