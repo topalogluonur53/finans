@@ -24,7 +24,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./finans_backend/db.sqlite3:/app/db.sqlite3
+      - ./database:/DATA/database
       - django_static:/app/static
 
   celery_worker:
@@ -41,7 +41,7 @@ services:
       - redis
       - backend
     volumes:
-      - ./finans_backend/db.sqlite3:/app/db.sqlite3
+      - ./database:/DATA/database
 
   celery_beat:
     build:
@@ -57,7 +57,7 @@ services:
       - redis
       - backend
     volumes:
-      - ./finans_backend/db.sqlite3:/app/db.sqlite3
+      - ./database:/DATA/database
 
   frontend:
     build:

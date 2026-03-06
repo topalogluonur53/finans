@@ -44,11 +44,11 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SQLITE_DB_PATH=/app/data/db.sqlite3
+      - SQLITE_DB_PATH=/DATA/database/db.sqlite3
     depends_on:
       - redis
     volumes:
-      - /DATA/AppData/finans-app/db_data:/app/data
+      - /DATA/AppData/finans-app/database:/DATA/database
       - /DATA/AppData/finans-app/static:/app/static
     x-casaos:
       envs:
@@ -67,12 +67,12 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SQLITE_DB_PATH=/app/data/db.sqlite3
+      - SQLITE_DB_PATH=/DATA/database/db.sqlite3
     depends_on:
       - redis
       - backend
     volumes:
-      - /DATA/AppData/finans-app/db_data:/app/data
+      - /DATA/AppData/finans-app/database:/DATA/database
 
   celery_beat:
     image: ${DOCKER_USERNAME:-topalogluonur53}/finans-backend:latest
@@ -82,12 +82,12 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SQLITE_DB_PATH=/app/data/db.sqlite3
+      - SQLITE_DB_PATH=/DATA/database/db.sqlite3
     depends_on:
       - redis
       - backend
     volumes:
-      - /DATA/AppData/finans-app/db_data:/app/data
+      - /DATA/AppData/finans-app/database:/DATA/database
 
   frontend:
     image: ${DOCKER_USERNAME:-topalogluonur53}/finans-frontend:latest
