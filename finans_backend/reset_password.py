@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 username = '5368977153'
-new_password = '123' # Basit bir test şifresi, kullanıcı bunu her zaman değiştirebilir.
+new_password = '123456' # Basit bir test şifresi, kullanıcı bunu her zaman değiştirebilir.
 
 try:
     user = User.objects.get(username=username)

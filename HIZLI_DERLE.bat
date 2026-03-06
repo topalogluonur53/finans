@@ -13,7 +13,7 @@ echo.
 echo [2/3] Flutter Derleniyor (JavaScript)...
 echo ========================================
 cd finans_app
-call ..\tools\flutter\bin\flutter.bat build web --release
+call flutter build web --release
 cd ..
 
 echo.
@@ -28,5 +28,5 @@ echo.
 echo Islem Tamamlandi! 
 echo Tarayicida 'Ctrl + F5' yaparak test edin.
 echo.
-start http://finans.onurtopaloglu.uk:8080
+start http://localhost:8080
 pause

@@ -28,7 +28,7 @@ timeout /t 3 >nul
 echo.
 echo [4/4] Tarayici aciliyor...
 echo ========================================
-start http://finans.onurtopaloglu.uk:8080
+start http://localhost:8080
 
 echo.
 echo Her sey hazir!

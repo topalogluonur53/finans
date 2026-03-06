@@ -27,7 +27,13 @@ SECRET_KEY = 'django-insecure-b5w$$iw(!8g#%t3h5hrp20h3245zo1o=8%7n0p=3o=dqh@-6s(
 DEBUG = False
 
 ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['https://finans.onurtopaloglu.uk', 'http://localhost']
+CSRF_TRUSTED_ORIGINS = [
+    'https://finans.onurtopaloglu.uk', 
+    'http://localhost', 
+    'http://localhost:8080', 
+    'http://127.0.0.1', 
+    'http://127.0.0.1:8080'
+]
 
 
 # Application definition
@@ -92,7 +98,7 @@ import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data' / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
